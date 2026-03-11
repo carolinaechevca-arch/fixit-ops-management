@@ -8,8 +8,8 @@ spring:
     banner-mode: console
   datasource:
     url: jdbc:postgresql://localhost:5432/fixit_db
-    username: postgres
-    password: postgres
+    username: ${USERNAME:postgres}
+    password: ${PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,13 +20,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        default_schema: users
         jdbc:
           time_zone: UTC
 
 springdoc:
-  swagger-ui:
-    path: /swagger-ui/index.html
   api-docs:
-    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    enabled: true
 
+logging:
+  level:
+    org.springdoc: DEBUG

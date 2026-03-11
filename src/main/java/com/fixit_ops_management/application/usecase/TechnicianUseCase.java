@@ -1,0 +1,30 @@
+package com.fixit_ops_management.application.usecase;
+
+import com.fixit_ops_management.application.port.in.ITechnicianServicePort;
+import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
+import com.fixit_ops_management.domain.model.Technician;
+import com.fixit_ops_management.domain.service.TechnicianDomainService;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
+
+@RequiredArgsConstructor
+public class TechnicianUseCase implements ITechnicianServicePort {
+
+    private final ITechnicianPersistencePort technicianPersistencePort;
+    private final TechnicianDomainService technicianDomainService;
+
+    @Override
+    public Technician createTechnician(Technician technician) {
+        Optional<Technician> existingTechnician = technicianPersistencePort.findByDni(technician.getDni());
+        technicianDomainService.validateTechnicianDoesNotExist(existingTechnician, technician.getDni());
+
+        Technician newTechnician = Technician.createNew(
+                technician.getDni(),
+                technician.getName(),
+                technician.getCategory()
+        );
+
+        return technicianPersistencePort.saveTechnician(newTechnician);
+    }
+}
