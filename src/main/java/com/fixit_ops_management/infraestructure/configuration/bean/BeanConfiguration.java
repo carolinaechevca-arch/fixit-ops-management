@@ -1,4 +1,5 @@
 package com.fixit_ops_management.infraestructure.configuration.bean;
+
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
 import com.fixit_ops_management.application.port.in.ITechnicianServicePort;
 import com.fixit_ops_management.application.port.out.ITaskPersistencePort;
@@ -25,14 +26,29 @@ public class BeanConfiguration {
     public ITechnicianPersistencePort technicianPersistencePort(
             ITechnicianRepository technicianRepository,
             ITechnicianEntityMapper technicianEntityMapper
-            ) {
-        return new TechnicianJpaAdapter(technicianRepository, technicianEntityMapper);
+    ) {
+       return new TechnicianJpaAdapter(technicianRepository, technicianEntityMapper);
     }
+
+    @Bean
+    public ITaskPersistencePort taskPersistencePort(
+            ITaskRepository taskRepository,
+            ITaskEntityMapper taskEntityMapper
+    ) {
+        return new TaskJpaAdapter(taskRepository, taskEntityMapper);
+    }
+
 
     @Bean
     public TechnicianDomainService technicianDomainService() {
         return new TechnicianDomainService();
     }
+
+    @Bean
+    public TaskDomainService taskDomainService() {
+        return new TaskDomainService();
+    }
+
 
     @Bean
     public ITechnicianServicePort technicianServicePort(
@@ -43,22 +59,11 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public ITaskPersistencePort taskPersistencePort (
-            ITaskRepository taskRepository,
-            ITaskEntityMapper taskEntityMapper
-    ) {
-        return new TaskJpaAdapter(taskRepository, taskEntityMapper);
-    }
-
-    @Bean
-    public TaskDomainService taskDomainService() {
-        return new TaskDomainService();
-    }
-
-    @Bean
     public ITaskServicePort taskServicePort(
-            ITaskPersistencePort taskPersistencePort
+            ITaskPersistencePort taskPersistencePort,
+            ITechnicianPersistencePort technicianPersistencePort,
+            TaskDomainService taskDomainService
     ) {
-        return new TaskServiceUseCase(taskPersistencePort);
+        return new TaskServiceUseCase(taskPersistencePort, technicianPersistencePort, taskDomainService);
     }
 }

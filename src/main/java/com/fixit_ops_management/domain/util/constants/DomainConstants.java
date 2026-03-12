@@ -5,4 +5,5 @@ public final class DomainConstants {
 
     public static final int INITIAL_VALUE = 0;
     public static final String TECHNICIAN_ALREADY_EXISTS_MESSAGE = "Technician with DNI %s already exists.";
+    public static final int MASTER_MAX_POINTS = 0; // 0 significa ilimitado
 }
