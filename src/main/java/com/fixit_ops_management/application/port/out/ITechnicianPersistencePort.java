@@ -1,6 +1,6 @@
 package com.fixit_ops_management.application.port.out;
 
-
+import com.fixit_ops_management.domain.enums.TechnicianCategory;
 import com.fixit_ops_management.domain.model.Technician;
 
 import java.util.List;
@@ -12,4 +12,8 @@ public interface ITechnicianPersistencePort {
     List<Technician> findAllTechnicians();
     Optional<Technician> findById(Long id);
 
+
+    List<Technician> findAll();
+
+    List<Technician> findByCategory(TechnicianCategory category);
 }
