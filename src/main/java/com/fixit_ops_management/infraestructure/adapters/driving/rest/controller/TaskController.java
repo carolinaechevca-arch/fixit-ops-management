@@ -1,19 +1,33 @@
 package com.fixit_ops_management.infraestructure.adapters.driving.rest.controller;
 
+import com.fixit_ops_management.application.dto.AutoAssignResult;
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TaskRequest;
+import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.AutoAssignResponse;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.TaskResponse;
+import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.DeleteResponse;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.mapper.ITaskRestMapper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/tasks")
@@ -21,16 +35,87 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Task Management", description = "Endpoints for creating and assigning maintenance tasks")
 public class TaskController {
 
-    private final ITaskServicePort taskServicePort;
-    private final ITaskRestMapper taskRestMapper;
+        private final ITaskServicePort taskServicePort;
+        private final ITaskRestMapper taskRestMapper;
 
-    @PostMapping
-    @Operation(summary = "Create a new task")
-    public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(taskRestMapper.toResponse(
-                        taskServicePort.createTask(taskRestMapper.toDomain(request))
-                ));
-    }
+        @PostMapping
+        @Operation(summary = "Create a new task with automatic assignment", description = "Creates a new task and automatically assigns it to an available technician. The system selects the best technician based on skill and availability.")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "201", description = "Task created successfully", content = @Content(schema = @Schema(implementation = TaskResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "Invalid data in the request")
+        })
+        public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest request) {
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(taskRestMapper.toResponse(
+                                                taskServicePort.createTask(taskRestMapper.toDomain(request))));
+        }
 
+        @GetMapping
+        @Operation(summary = "List all tasks", description = "Gets the complete list of all tasks in the system")
+        @ApiResponse(responseCode = "200", description = "Task list successfully obtained")
+        public ResponseEntity<List<TaskResponse>> getAllTasks() {
+                return ResponseEntity.ok(
+                                taskRestMapper.toResponseList(taskServicePort.getAllTasks()));
+        }
+
+        @GetMapping("/{id}")
+        @Operation(summary = "Get details of a task", description = "Gets detailed information about a specific task by its ID")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Task found"),
+                        @ApiResponse(responseCode = "404", description = "Task not found")
+        })
+        public ResponseEntity<TaskResponse> getTaskById(
+                        @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
+                return ResponseEntity.ok(
+                                taskRestMapper.toResponse(taskServicePort.getTaskById(id)));
+        }
+
+        @DeleteMapping("/{id}")
+        @Operation(summary = "Delete a task", description = "Deletes a task with business rule validation. Does not allow deleting tasks in IN_PROGRESS or COMPLETED status")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Task deleted successfully", content = @Content(schema = @Schema(implementation = DeleteResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "The task cannot be deleted (invalid status)"),
+                        @ApiResponse(responseCode = "404", description = "Task not found")
+        })
+        public ResponseEntity<DeleteResponse> deleteTask(
+                        @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
+                taskServicePort.deleteTask(id);
+                return ResponseEntity.ok(DeleteResponse.builder()
+                                .message("Task deleted successfully")
+                                .resourceId(id)
+                                .status("SUCCESS")
+                                .timestamp(LocalDateTime.now())
+                                .build());
+        }
+
+        @PostMapping("/{id}/assign-urgent")
+        @Operation(summary = "Assign urgent task to Master (Manual)", description = "Assigns a specific urgent task to the Master with the least load of urgent tasks. Scenario 1: Manual assignment control.")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Task assigned successfully to Master", content = @Content(schema = @Schema(implementation = TaskResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "The task is not urgent"),
+                        @ApiResponse(responseCode = "404", description = "Task not found"),
+                        @ApiResponse(responseCode = "500", description = "No Master technicians available")
+        })
+        public ResponseEntity<TaskResponse> assignUrgentTask(
+                        @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
+                return ResponseEntity.status(HttpStatus.OK)
+                                .body(taskRestMapper.toResponse(taskServicePort.assignUrgentTask(id)));
+        }
+
+        @PostMapping("/auto-assign/urgent")
+        @Operation(summary = "Auto-assign all pending urgent tasks (Automatic)", description = "Automatically searches for all PENDING URGENT tasks and assigns them to available Masters, balancing the load based on the number of assigned urgent tasks. Scenario 2: Automatic assignment by the system.")
+        @ApiResponses(value = {
+                        @ApiResponse(responseCode = "200", description = "Auto-assignment completed"),
+                        @ApiResponse(responseCode = "500", description = "No Master technicians available")
+        })
+        public ResponseEntity<AutoAssignResponse> autoAssignUrgentTasks() {
+                AutoAssignResult result = taskServicePort.autoAssignAllUrgentTasks();
+                AutoAssignResponse response = AutoAssignResponse.builder()
+                                .assignedCount(result.assignedCount())
+                                .pendingCount(result.remainingPendingCount())
+                                .message(result.message())
+                                .status(result.success() ? "SUCCESS" : "PARTIAL")
+                                .build();
+                return ResponseEntity.ok(response);
+        }
 }

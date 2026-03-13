@@ -10,5 +10,6 @@ public enum TaskPriority {
     MEDIUM(5),
     HIGH(8),
     URGENT(0);
+
     private final int points;
 }

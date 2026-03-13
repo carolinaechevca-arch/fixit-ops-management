@@ -7,11 +7,10 @@ spring:
   main:
     banner-mode: console
   datasource:
-    url: jdbc:postgresql://localhost:5432/fixit_db
-    username: ${USERNAME:postgres}
-    password: ${PASSWORD:postgres}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fixit_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
