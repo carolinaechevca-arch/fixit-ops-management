@@ -80,8 +80,12 @@ public class TaskServiceUseCase implements ITaskServicePort {
         Task task = getTaskById(taskId);
 
         if (!task.isUrgent()) {
+            throw new TaskNotUrgentException(DomainConstants.TASK_NOT_URGENT_MESSAGE);
+        }
+
+        if (task.getStatus().equals(TaskStatus.ASSIGNED)) {
             throw new TaskNotUrgentException(
-                    "Task must have URGENT priority to be assigned to Master technicians.");
+                    DomainConstants.TASK_NOT_ASSIGNED_MESSAGE);
         }
 
         return assignTaskToMaster(task);
@@ -95,6 +99,15 @@ public class TaskServiceUseCase implements ITaskServicePort {
                 .filter(Task::isUrgent)
                 .filter(task -> TaskStatus.PENDING.equals(task.getStatus()))
                 .toList();
+
+        if (urgentPendingTasks.isEmpty()) {
+            return AutoAssignResult.builder()
+                    .assignedCount(0)
+                    .remainingPendingCount(0)
+                    .success(true)
+                    .message(DomainConstants.NO_PENDING_URGENT_TASKS_MESSAGE)
+                    .build();
+        }
 
         // Assign each pending urgent task
         long assignedCount = 0;
@@ -119,8 +132,9 @@ public class TaskServiceUseCase implements ITaskServicePort {
                 .remainingPendingCount(remainingPending)
                 .success(remainingPending == 0)
                 .message(remainingPending == 0
-                        ? "All urgent tasks assigned successfully"
-                        : "Assigned " + assignedCount + " tasks. " + remainingPending + " pending urgent tasks remain")
+                        ? DomainConstants.ALL_URGENT_TASKS_ASSIGNED_MESSAGE
+                        : String.format(DomainConstants.AUTO_ASSIGN_URGENT_TASKS_MESSAGE, assignedCount,
+                                remainingPending))
                 .build();
     }
 
@@ -129,7 +143,7 @@ public class TaskServiceUseCase implements ITaskServicePort {
         List<Technician> masters = technicianPersistencePort.findByCategory(TechnicianCategory.MASTER);
         if (masters.isEmpty()) {
             throw new NoMasterTechniciansAvailableException(
-                    "No Master technicians available to assign urgent tasks.");
+                    DomainConstants.NO_MASTER_TECHNICIANS_AVAILABLE_MESSAGE);
         }
 
         // Count urgent tasks assigned to each Master

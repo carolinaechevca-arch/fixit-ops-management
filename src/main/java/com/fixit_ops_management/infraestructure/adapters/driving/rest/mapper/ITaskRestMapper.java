@@ -17,7 +17,6 @@ public interface ITaskRestMapper {
     @Mapping(target = "technicianId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "closedAt", ignore = true)
-    @Mapping(source = "priority", target = "priority")
     Task toDomain(TaskRequest request);
 
     TaskResponse toResponse(Task task);
