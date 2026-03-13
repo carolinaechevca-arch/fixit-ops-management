@@ -5,7 +5,7 @@ import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.mapper.ITechnicianEntityMapper;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.repository.repository.ITechnicianRepository;
 import lombok.RequiredArgsConstructor;
-
+import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -24,6 +24,20 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
     @Override
     public Optional<Technician> findByDni(String dni) {
         return technicianRepository.findByDni(dni)
+                .map(technicianEntityMapper::toDomain);
+    }
+
+    @Override
+    public List<Technician> findAllTechnicians() {
+        return technicianRepository.findAll()
+                .stream()
+                .map(technicianEntityMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<Technician> findById(Long id) {
+        return technicianRepository.findById(id)
                 .map(technicianEntityMapper::toDomain);
     }
 }

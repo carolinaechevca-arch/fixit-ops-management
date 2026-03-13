@@ -5,7 +5,7 @@ import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
 import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.service.TechnicianDomainService;
 import lombok.RequiredArgsConstructor;
-
+import  java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -26,5 +26,16 @@ public class TechnicianUseCase implements ITechnicianServicePort {
         );
 
         return technicianPersistencePort.saveTechnician(newTechnician);
+    }
+
+    @Override
+    public List<Technician> getAllTechnicians() {
+            return technicianPersistencePort.findAllTechnicians();
+    }
+
+    @Override
+    public Technician getTechnicianById(Long id) {
+        return technicianPersistencePort.findById(id)
+                .orElseThrow(() -> new RuntimeException("Technician not found"));
     }
 }
