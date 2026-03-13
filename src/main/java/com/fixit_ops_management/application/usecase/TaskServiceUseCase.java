@@ -1,16 +1,23 @@
 package com.fixit_ops_management.application.usecase;
 
+import com.fixit_ops_management.application.dto.AutoAssignResult;
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
 import com.fixit_ops_management.application.port.out.ITaskPersistencePort;
 import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
 import com.fixit_ops_management.domain.enums.TaskStatus;
+import com.fixit_ops_management.domain.enums.TechnicianCategory;
+import com.fixit_ops_management.domain.exceptions.TaskNotFoundException;
+import com.fixit_ops_management.domain.exceptions.NoMasterTechniciansAvailableException;
+import com.fixit_ops_management.domain.exceptions.TaskNotUrgentException;
 import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.service.TaskDomainService;
+import com.fixit_ops_management.domain.util.constants.DomainConstants;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @RequiredArgsConstructor
 public class TaskServiceUseCase implements ITaskServicePort {
@@ -19,24 +26,23 @@ public class TaskServiceUseCase implements ITaskServicePort {
     private final ITechnicianPersistencePort technicianPersistencePort;
     private final TaskDomainService taskDomainService;
 
-
     @Override
     public Task createTask(Task task) {
         Task newTask = Task.createNew(
                 task.getName(),
                 task.getDescription(),
-                task.getPriority()
-        );
+                task.getPriority());
 
         List<Technician> allTechnicians = technicianPersistencePort.findAll();
-        Optional<Technician> assignedTech = taskDomainService.findBestTechnicianForAutoAssignment(allTechnicians, newTask);
+        Optional<Technician> assignedTech = taskDomainService.findBestTechnicianForAutoAssignment(allTechnicians,
+                newTask);
 
         if (assignedTech.isPresent()) {
             Technician selected = assignedTech.get();
 
             newTask = newTask.toBuilder()
                     .technicianId(selected.getId())
-                    .status(TaskStatus.IN_PROGRESS)
+                    .status(TaskStatus.ASSIGNED)
                     .build();
 
             Technician updatedTech = selected.toBuilder()
@@ -48,5 +54,129 @@ public class TaskServiceUseCase implements ITaskServicePort {
         }
 
         return taskPersistencePort.save(newTask);
+    }
+
+    @Override
+    public List<Task> getAllTasks() {
+        return taskPersistencePort.findAll();
+    }
+
+    @Override
+    public Task getTaskById(Long id) {
+        return taskPersistencePort.findById(id)
+                .orElseThrow(
+                        () -> new TaskNotFoundException(String.format(DomainConstants.TASK_NOT_FOUND_MESSAGE, id)));
+    }
+
+    @Override
+    public void deleteTask(Long id) {
+        Task task = getTaskById(id);
+        taskDomainService.validateTaskCanBeDeleted(task);
+        taskPersistencePort.deleteById(id);
+    }
+
+    @Override
+    public Task assignUrgentTask(Long taskId) {
+        Task task = getTaskById(taskId);
+
+        if (!task.isUrgent()) {
+            throw new TaskNotUrgentException(DomainConstants.TASK_NOT_URGENT_MESSAGE);
+        }
+
+        if (task.getStatus().equals(TaskStatus.ASSIGNED)) {
+            throw new TaskNotUrgentException(
+                    DomainConstants.TASK_NOT_ASSIGNED_MESSAGE);
+        }
+
+        return assignTaskToMaster(task);
+    }
+
+    @Override
+    public AutoAssignResult autoAssignAllUrgentTasks() {
+        // Get all pending and urgent tasks
+        List<Task> urgentPendingTasks = taskPersistencePort.findAll()
+                .stream()
+                .filter(Task::isUrgent)
+                .filter(task -> TaskStatus.PENDING.equals(task.getStatus()))
+                .toList();
+
+        if (urgentPendingTasks.isEmpty()) {
+            return AutoAssignResult.builder()
+                    .assignedCount(0)
+                    .remainingPendingCount(0)
+                    .success(true)
+                    .message(DomainConstants.NO_PENDING_URGENT_TASKS_MESSAGE)
+                    .build();
+        }
+
+        // Assign each pending urgent task
+        long assignedCount = 0;
+        for (Task task : urgentPendingTasks) {
+            try {
+                assignTaskToMaster(task);
+                assignedCount++;
+            } catch (Exception e) {
+                // Continue with the next task if this one fails
+            }
+        }
+
+        // Count remaining pending urgent tasks
+        long remainingPending = taskPersistencePort.findAll()
+                .stream()
+                .filter(Task::isUrgent)
+                .filter(task -> TaskStatus.PENDING.equals(task.getStatus()))
+                .count();
+
+        return AutoAssignResult.builder()
+                .assignedCount(assignedCount)
+                .remainingPendingCount(remainingPending)
+                .success(remainingPending == 0)
+                .message(remainingPending == 0
+                        ? DomainConstants.ALL_URGENT_TASKS_ASSIGNED_MESSAGE
+                        : String.format(DomainConstants.AUTO_ASSIGN_URGENT_TASKS_MESSAGE, assignedCount,
+                                remainingPending))
+                .build();
+    }
+
+    private Task assignTaskToMaster(Task task) {
+        // Find all Master technicians
+        List<Technician> masters = technicianPersistencePort.findByCategory(TechnicianCategory.MASTER);
+        if (masters.isEmpty()) {
+            throw new NoMasterTechniciansAvailableException(
+                    DomainConstants.NO_MASTER_TECHNICIANS_AVAILABLE_MESSAGE);
+        }
+
+        // Count urgent tasks assigned to each Master
+        List<MasterWithUrgentCount> mastersWithCount = masters.stream()
+                .map(master -> new MasterWithUrgentCount(
+                        master,
+                        taskPersistencePort.countUrgentTasksByTechnicianId(master.getId())))
+                .toList();
+
+        // Find the minimum number of urgent tasks assigned
+        long minCount = mastersWithCount.stream()
+                .mapToLong(MasterWithUrgentCount::urgentCount)
+                .min()
+                .orElse(0L);
+
+        // Filter only Masters with the minimum count
+        List<MasterWithUrgentCount> candidates = mastersWithCount.stream()
+                .filter(m -> m.urgentCount == minCount)
+                .toList();
+
+        // If there's a tie, select one randomly
+        MasterWithUrgentCount selected = candidates.get(
+                ThreadLocalRandom.current().nextInt(candidates.size()));
+
+        // Assign the task to the selected Master and mark it as ASSIGNED
+        Task updated = task.toBuilder()
+                .technicianId(selected.master().getId())
+                .status(TaskStatus.ASSIGNED)
+                .build();
+
+        return taskPersistencePort.save(updated);
+    }
+
+    private record MasterWithUrgentCount(Technician master, long urgentCount) {
     }
 }

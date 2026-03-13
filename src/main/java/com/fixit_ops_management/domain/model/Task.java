@@ -28,4 +28,8 @@ public class Task {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
+    public boolean isUrgent() {
+        return TaskPriority.URGENT.equals(priority);
+    }
 }

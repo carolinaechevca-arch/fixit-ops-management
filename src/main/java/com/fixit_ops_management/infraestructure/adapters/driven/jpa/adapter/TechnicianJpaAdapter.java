@@ -1,6 +1,7 @@
 package com.fixit_ops_management.infraestructure.adapters.driven.jpa.adapter;
 
 import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
+import com.fixit_ops_management.domain.enums.TechnicianCategory;
 import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.mapper.ITechnicianEntityMapper;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.repository.ITechnicianRepository;
@@ -18,8 +19,7 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
     @Override
     public Technician saveTechnician(Technician technician) {
         return technicianEntityMapper.toDomain(
-                technicianRepository.save(technicianEntityMapper.toEntity(technician))
-        );
+                technicianRepository.save(technicianEntityMapper.toEntity(technician)));
     }
 
     @Override
@@ -31,6 +31,14 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
     @Override
     public List<Technician> findAll() {
         return technicianRepository.findAll().stream()
+                .map(technicianEntityMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Technician> findByCategory(TechnicianCategory category) {
+        return technicianRepository.findByCategory(category)
+                .stream()
                 .map(technicianEntityMapper::toDomain)
                 .toList();
     }
