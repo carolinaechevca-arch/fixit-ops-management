@@ -4,9 +4,7 @@ import com.fixit_ops_management.domain.enums.TaskStatus;
 import com.fixit_ops_management.domain.exceptions.TaskCannotBeDeletedException;
 import com.fixit_ops_management.domain.exceptions.TaskNotFoundException;
 import com.fixit_ops_management.domain.exceptions.TaskNotUrgentException;
-import com.fixit_ops_management.domain.exceptions.TechnicianAlreadyExistsException;
 import com.fixit_ops_management.domain.model.Task;
-import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.util.constants.DomainConstants;
 
 import java.util.Optional;
@@ -35,4 +33,6 @@ public class TaskDomainService {
                     DomainConstants.TASK_NOT_ASSIGNED_MESSAGE);
         }
     }
+
+
 }

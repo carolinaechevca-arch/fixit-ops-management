@@ -7,10 +7,7 @@ import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
 import com.fixit_ops_management.domain.enums.TaskPriority;
 import com.fixit_ops_management.domain.enums.TaskStatus;
 import com.fixit_ops_management.domain.enums.TechnicianCategory;
-import com.fixit_ops_management.domain.enums.TechnicianStatus;
 import com.fixit_ops_management.domain.exceptions.NoMasterTechniciansAvailableException;
-import com.fixit_ops_management.domain.exceptions.TaskNotFoundException;
-import com.fixit_ops_management.domain.exceptions.TaskNotUrgentException;
 import com.fixit_ops_management.domain.model.MasterWithUrgentCount;
 import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.model.Technician;
@@ -72,17 +69,7 @@ public class TaskServiceUseCase implements ITaskServicePort {
     }
 
     private void updateTechnicianState(Technician technician, int pointsToAdd) {
-        int newPoints = technician.getCurrentPoints() + pointsToAdd;
- //service
-        TechnicianStatus nextStatus = (newPoints >= technician.getCategory().getMaxPoints())
-                ? TechnicianStatus.NOT_AVAILABLE
-                : TechnicianStatus.BUSY;
-
-        technicianPersistencePort.saveTechnician(technician.toBuilder()
-                .currentPoints(newPoints)
-                .taskCount(technician.getTaskCount() + 1)
-                .status(nextStatus)
-                .build());
+        technicianPersistencePort.saveTechnician(assignmentStrategy.updateTechnicianState(technician, pointsToAdd));
     }
 
     @Override

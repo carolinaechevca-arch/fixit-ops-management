@@ -34,5 +34,18 @@ public class AssignmentStrategy {
                         .thenComparing(Technician::getCurrentPoints, Comparator.reverseOrder()))
                 .findFirst();
     }
+    public Technician updateTechnicianState(Technician technician, int pointsToAdd) {
+        int newPoints = technician.getCurrentPoints() + pointsToAdd;
+
+        TechnicianStatus nextStatus = (newPoints >= technician.getCategory().getMaxPoints())
+                ? TechnicianStatus.NOT_AVAILABLE
+                : TechnicianStatus.BUSY;
+
+        return technician.toBuilder()
+                .currentPoints(newPoints)
+                .taskCount(technician.getTaskCount() + 1)
+                .status(nextStatus)
+                .build();
+    }
 
 }

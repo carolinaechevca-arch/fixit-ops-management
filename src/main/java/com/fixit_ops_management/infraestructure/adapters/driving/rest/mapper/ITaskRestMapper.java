@@ -1,7 +1,7 @@
 package com.fixit_ops_management.infraestructure.adapters.driving.rest.mapper;
 
-import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.enums.TaskPriority;
+import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TaskRequest;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.TaskResponse;
 import org.mapstruct.Mapper;

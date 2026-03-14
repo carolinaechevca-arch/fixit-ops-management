@@ -1,10 +1,6 @@
 package com.fixit_ops_management.infraestructure.configuration.exceptionhandler;
 
-import com.fixit_ops_management.domain.exceptions.TaskCannotBeDeletedException;
-import com.fixit_ops_management.domain.exceptions.TaskNotFoundException;
-import com.fixit_ops_management.domain.exceptions.NoMasterTechniciansAvailableException;
-import com.fixit_ops_management.domain.exceptions.TaskNotUrgentException;
-import com.fixit_ops_management.domain.exceptions.TechnicianAlreadyExistsException;
+import com.fixit_ops_management.domain.exceptions.*;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.ExceptionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
