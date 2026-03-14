@@ -6,6 +6,7 @@ import com.fixit_ops_management.application.port.out.ITaskPersistencePort;
 import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
 import com.fixit_ops_management.application.usecase.TaskServiceUseCase;
 import com.fixit_ops_management.application.usecase.TechnicianUseCase;
+import com.fixit_ops_management.domain.service.AssignmentStrategy;
 import com.fixit_ops_management.domain.service.TaskDomainService;
 import com.fixit_ops_management.domain.service.TechnicianDomainService;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.adapter.TaskJpaAdapter;
@@ -62,8 +63,9 @@ public class BeanConfiguration {
     public ITaskServicePort taskServicePort(
             ITaskPersistencePort taskPersistencePort,
             ITechnicianPersistencePort technicianPersistencePort,
-            TaskDomainService taskDomainService
+            TaskDomainService taskDomainService,
+            AssignmentStrategy assignmentStrategy
     ) {
-        return new TaskServiceUseCase(taskPersistencePort, technicianPersistencePort, taskDomainService);
+        return new TaskServiceUseCase(taskPersistencePort, technicianPersistencePort, taskDomainService, assignmentStrategy);
     }
 }

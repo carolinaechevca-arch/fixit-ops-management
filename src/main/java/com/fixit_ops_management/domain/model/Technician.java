@@ -26,4 +26,8 @@ public class Technician {
                 .currentPoints(0)
                 .build();
     }
+    public boolean canAcceptTaskPoints(int points) {
+        if (this.category == TechnicianCategory.MASTER) return false;
+        return (this.currentPoints + points) <= this.category.getMaxPoints();
+    }
 }

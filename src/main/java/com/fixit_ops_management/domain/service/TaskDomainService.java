@@ -2,12 +2,13 @@ package com.fixit_ops_management.domain.service;
 
 import com.fixit_ops_management.domain.enums.TaskStatus;
 import com.fixit_ops_management.domain.exceptions.TaskCannotBeDeletedException;
+import com.fixit_ops_management.domain.exceptions.TaskNotFoundException;
+import com.fixit_ops_management.domain.exceptions.TaskNotUrgentException;
+import com.fixit_ops_management.domain.exceptions.TechnicianAlreadyExistsException;
 import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.util.constants.DomainConstants;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 
 public class TaskDomainService {
@@ -18,22 +19,20 @@ public class TaskDomainService {
                     String.format(DomainConstants.TASK_CANNOT_BE_DELETED_MESSAGE, task.getId(), task.getStatus()));
         }
     }
-
-    public Optional<Technician> findBestTechnicianForAutoAssignment(List<Technician> technicians, Task task) {
-        return technicians.stream()
-                .filter(tech -> tech.getStatus().isAvailable())
-                .filter(tech -> canTechnicianHandleTask(tech, task))
-                .sorted(Comparator
-                        .comparing(Technician::getCategory).reversed()
-                        .thenComparing(Comparator.comparing(Technician::getCurrentPoints).reversed()))
-                .findFirst();
+    public Task validateTaskExist(Optional<Task> task, Long id) {
+        if (!task.isPresent()) {
+            throw new TaskNotFoundException(String.format(DomainConstants.TASK_NOT_FOUND_MESSAGE, id));
+        }
+        return task.get();
     }
+    public void validateTaskUrgent(Task task) {
+        if (!task.isUrgent()) {
+            throw new TaskNotUrgentException(DomainConstants.TASK_NOT_URGENT_MESSAGE);
+        }
 
-    private boolean canTechnicianHandleTask(Technician tech, Task task) {
-        int maxPoints = tech.getCategory().getMaxPoints();
-        if (maxPoints == DomainConstants.MASTER_MAX_POINTS)
-            return true;
-
-        return (tech.getCurrentPoints() + task.getPriority().getPoints()) <= maxPoints;
+        if (task.getStatus().equals(TaskStatus.ASSIGNED)) {
+            throw new TaskNotUrgentException(
+                    DomainConstants.TASK_NOT_ASSIGNED_MESSAGE);
+        }
     }
 }
