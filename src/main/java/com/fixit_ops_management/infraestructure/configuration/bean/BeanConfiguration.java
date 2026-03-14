@@ -38,7 +38,10 @@ public class BeanConfiguration {
     ) {
         return new TaskJpaAdapter(taskRepository, taskEntityMapper);
     }
-
+    @Bean
+    public AssignmentStrategy assignmentStrategy() {
+        return new AssignmentStrategy();
+    }
 
     @Bean
     public TechnicianDomainService technicianDomainService() {
