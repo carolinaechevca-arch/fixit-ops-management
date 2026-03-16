@@ -15,12 +15,12 @@ public class AssignmentStrategy {
         List<TechnicianCategory> hierarchy = List.of(
                 TechnicianCategory.JUNIOR,
                 TechnicianCategory.SEMI_SENIOR,
-                TechnicianCategory.SENIOR
-        );
+                TechnicianCategory.SENIOR);
 
         for (TechnicianCategory category : hierarchy) {
             Optional<Technician> selected = findInCategory(technicians, category, task.getPriority().getPoints());
-            if (selected.isPresent()) return selected;
+            if (selected.isPresent())
+                return selected;
         }
         return Optional.empty();
     }
@@ -34,16 +34,26 @@ public class AssignmentStrategy {
                         .thenComparing(Technician::getCurrentPoints, Comparator.reverseOrder()))
                 .findFirst();
     }
+
     public Technician updateTechnicianState(Technician technician, int pointsToAdd) {
         int newPoints = technician.getCurrentPoints() + pointsToAdd;
+        int newTaskCount = technician.getTaskCount() + 1;
 
-        TechnicianStatus nextStatus = (newPoints >= technician.getCategory().getMaxPoints())
-                ? TechnicianStatus.NOT_AVAILABLE
-                : TechnicianStatus.BUSY;
+        TechnicianStatus nextStatus;
+
+        if (technician.getCategory() == TechnicianCategory.MASTER) {
+            nextStatus = (newTaskCount >= 3)
+                    ? TechnicianStatus.NOT_AVAILABLE
+                    : TechnicianStatus.BUSY;
+        } else {
+            nextStatus = (newPoints >= technician.getCategory().getMaxPoints())
+                    ? TechnicianStatus.NOT_AVAILABLE
+                    : TechnicianStatus.BUSY;
+        }
 
         return technician.toBuilder()
                 .currentPoints(newPoints)
-                .taskCount(technician.getTaskCount() + 1)
+                .taskCount(newTaskCount)
                 .status(nextStatus)
                 .build();
     }

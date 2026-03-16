@@ -7,6 +7,7 @@ import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
 import com.fixit_ops_management.domain.enums.TaskPriority;
 import com.fixit_ops_management.domain.enums.TaskStatus;
 import com.fixit_ops_management.domain.enums.TechnicianCategory;
+import com.fixit_ops_management.domain.enums.TechnicianStatus;
 import com.fixit_ops_management.domain.exceptions.NoMasterTechniciansAvailableException;
 import com.fixit_ops_management.domain.model.MasterWithUrgentCount;
 import com.fixit_ops_management.domain.model.Task;
@@ -19,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-
 
 @RequiredArgsConstructor
 public class TaskServiceUseCase implements ITaskServicePort {
@@ -136,12 +136,16 @@ public class TaskServiceUseCase implements ITaskServicePort {
                 .message(remainingPending == 0
                         ? DomainConstants.ALL_URGENT_TASKS_ASSIGNED_MESSAGE
                         : String.format(DomainConstants.AUTO_ASSIGN_URGENT_TASKS_MESSAGE, assignedCount,
-                        remainingPending))
+                                remainingPending))
                 .build();
     }
 
     private Task assignTaskToMaster(Task task) {
-        List<Technician> masters = technicianPersistencePort.findByCategory(TechnicianCategory.MASTER);
+        List<Technician> masters = technicianPersistencePort.findByCategory(TechnicianCategory.MASTER)
+                .stream()
+                .filter(m -> m.getStatus() != TechnicianStatus.NOT_AVAILABLE)
+                .toList();
+
         if (masters.isEmpty()) {
             throw new NoMasterTechniciansAvailableException(
                     DomainConstants.NO_MASTER_TECHNICIANS_AVAILABLE_MESSAGE);
@@ -165,6 +169,9 @@ public class TaskServiceUseCase implements ITaskServicePort {
         MasterWithUrgentCount selected = candidates.get(
                 ThreadLocalRandom.current().nextInt(candidates.size()));
 
+        Technician updatedMaster = assignmentStrategy.updateTechnicianState(selected.master(), 0);
+        technicianPersistencePort.saveTechnician(updatedMaster);
+
         Task updated = task.toBuilder()
                 .technicianId(selected.master().getId())
                 .status(TaskStatus.ASSIGNED)
@@ -172,7 +179,5 @@ public class TaskServiceUseCase implements ITaskServicePort {
 
         return taskPersistencePort.save(updated);
     }
-
-
 
 }
