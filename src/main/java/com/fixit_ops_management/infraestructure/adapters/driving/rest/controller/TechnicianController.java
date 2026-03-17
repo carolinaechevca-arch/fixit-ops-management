@@ -1,8 +1,10 @@
 package com.fixit_ops_management.infraestructure.adapters.driving.rest.controller;
 
 import com.fixit_ops_management.application.port.in.ITechnicianServicePort;
+import com.fixit_ops_management.domain.model.TechnicianWorkload;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TechnicianRequest;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.TechnicianResponse;
+import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.TechnicianWorkloadResponse;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.mapper.ITechnicianRestMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -54,8 +56,6 @@ public class TechnicianController {
         );
     }
 
-
-
     @GetMapping("/{id}")
     public ResponseEntity<TechnicianResponse> getTechnicianById(@PathVariable Long id) {
         return ResponseEntity.ok(
@@ -65,4 +65,11 @@ public class TechnicianController {
         );
     }
 
+    @GetMapping("/{id}/workload")
+    @Operation(summary = "Get technician workload and capacity")
+    public ResponseEntity<TechnicianWorkloadResponse> getTechnicianWorkload(@PathVariable Long id) {
+      TechnicianWorkload workload = technicianServicePort.getTechnicianWorkload(id);
+      return ResponseEntity.ok(technicianRestMapper.toWorkloadResponse(workload));
+
+    }
 }
