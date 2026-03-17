@@ -1,6 +1,5 @@
 package com.fixit_ops_management.application.usecase;
 
-import com.fixit_ops_management.application.dto.AutoAssignResult;
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
 import com.fixit_ops_management.application.port.out.ITaskPersistencePort;
 import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
@@ -9,6 +8,7 @@ import com.fixit_ops_management.domain.enums.TaskStatus;
 import com.fixit_ops_management.domain.enums.TechnicianCategory;
 import com.fixit_ops_management.domain.enums.TechnicianStatus;
 import com.fixit_ops_management.domain.exceptions.NoMasterTechniciansAvailableException;
+import com.fixit_ops_management.domain.model.AutoAssignSummary;
 import com.fixit_ops_management.domain.model.MasterWithUrgentCount;
 import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.model.Technician;
@@ -98,7 +98,7 @@ public class TaskServiceUseCase implements ITaskServicePort {
     }
 
     @Override
-    public AutoAssignResult autoAssignAllUrgentTasks() {
+    public AutoAssignSummary autoAssignAllUrgentTasks() {
         List<Task> urgentPendingTasks = taskPersistencePort.findAll()
                 .stream()
                 .filter(Task::isUrgent)
@@ -106,7 +106,7 @@ public class TaskServiceUseCase implements ITaskServicePort {
                 .toList();
 
         if (urgentPendingTasks.isEmpty()) {
-            return AutoAssignResult.builder()
+            return AutoAssignSummary.builder()
                     .assignedCount(0)
                     .remainingPendingCount(0)
                     .success(true)
@@ -129,7 +129,7 @@ public class TaskServiceUseCase implements ITaskServicePort {
                 .filter(task -> TaskStatus.PENDING.equals(task.getStatus()))
                 .count();
 
-        return AutoAssignResult.builder()
+        return AutoAssignSummary.builder()
                 .assignedCount(assignedCount)
                 .remainingPendingCount(remainingPending)
                 .success(remainingPending == 0)
