@@ -30,4 +30,10 @@ public class Technician {
         if (this.category == TechnicianCategory.MASTER) return false;
         return (this.currentPoints + points) <= this.category.getMaxPoints();
     }
+
+    public Integer getAvailablePoints(){
+        int maxPoints = category.getMaxPoints();
+        if (maxPoints == 0) return 100;
+        return maxPoints - this.currentPoints;
+    }
 }
