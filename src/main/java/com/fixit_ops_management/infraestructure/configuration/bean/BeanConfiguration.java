@@ -57,9 +57,10 @@ public class BeanConfiguration {
     @Bean
     public ITechnicianServicePort technicianServicePort(
             ITechnicianPersistencePort technicianPersistencePort,
-            TechnicianDomainService technicianDomainService
+            TechnicianDomainService technicianDomainService,
+            ITaskPersistencePort taskPersistencePort
     ) {
-        return new TechnicianUseCase(technicianPersistencePort, technicianDomainService);
+        return new TechnicianUseCase(technicianPersistencePort, technicianDomainService, taskPersistencePort);
     }
 
     @Bean
