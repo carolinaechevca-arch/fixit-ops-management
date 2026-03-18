@@ -6,6 +6,7 @@ import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.mapper.ITechnicianEntityMapper;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.repository.ITechnicianRepository;
 import lombok.RequiredArgsConstructor;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -16,7 +17,7 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
     private final ITechnicianEntityMapper technicianEntityMapper;
 
     @Override
-    public Technician saveTechnician(Technician technician) {
+    public Technician save(Technician technician) {
         return technicianEntityMapper.toDomain(
                 technicianRepository.save(technicianEntityMapper.toEntity(technician))
         );
@@ -28,13 +29,7 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
                 .map(technicianEntityMapper::toDomain);
     }
 
-    @Override
-    public List<Technician> findAllTechnicians() {
-        return technicianRepository.findAll()
-                .stream()
-                .map(technicianEntityMapper::toDomain)
-                .toList();
-    }
+
 
     @Override
     public Optional<Technician> findById(Long id) {
@@ -42,11 +37,18 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
                 .map(technicianEntityMapper::toDomain);
     }
 
+
     @Override
     public List<Technician> findAll() {
         return technicianRepository.findAll().stream()
                 .map(technicianEntityMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        technicianRepository.deleteById(id);
+
     }
 
     @Override

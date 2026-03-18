@@ -62,4 +62,10 @@ public class ControllerAdvisor {
                 HttpStatus.BAD_REQUEST.value()));
     }
 
+    @ExceptionHandler(TechnicianBusyException.class)
+    public ResponseEntity<ExceptionResponse> handleTechnicianBusyException(TechnicianBusyException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ExceptionResponse(
+                exception.getMessage(), HttpStatus.BAD_REQUEST.getReasonPhrase(), LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value()));
+    }
 }

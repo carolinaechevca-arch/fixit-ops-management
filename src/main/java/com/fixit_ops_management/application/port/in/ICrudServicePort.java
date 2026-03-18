@@ -1,4 +1,10 @@
-package com.fixit_ops_management.application.port.in;
+ package com.fixit_ops_management.application.port.in;
 
-public class ICrudServicePort {
+import java.util.List;
+
+public interface ICrudServicePort<T, ID> {
+    T create(T entity);
+    List<T> getAll();
+    T getById(ID id);
+    void delete(ID id);
 }

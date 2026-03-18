@@ -5,6 +5,7 @@ public final class DomainConstants {
         throw new IllegalStateException("Utility class");
     }
 
+    public static final String TECHNICIAN_BUSY_MESSAGE = "Technician with ID %s is currently busy and cannot be assigned new tasks.";
     public static final String TECHNICIAN_DNI_ALREADY_EXISTS_MESSAGE = "Technician with DNI %s already exists.";
     public static final String TECHNICIAN_NOT_FOUND_MESSAGE = "Technician with ID %s already exists.";
     public static final String TASK_NOT_FOUND_MESSAGE = "Task with id %d was not found.";

@@ -41,7 +41,7 @@ public class TaskController {
         public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest request) {
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(taskRestMapper.toResponse(
-                                                taskServicePort.createTask(taskRestMapper.toDomain(request))));
+                                                taskServicePort.create(taskRestMapper.toDomain(request))));
         }
 
         @GetMapping
@@ -49,7 +49,7 @@ public class TaskController {
         @ApiResponse(responseCode = "200", description = "Task list successfully obtained")
         public ResponseEntity<List<TaskResponse>> getAllTasks() {
                 return ResponseEntity.ok(
-                                taskRestMapper.toResponseList(taskServicePort.getAllTasks()));
+                                taskRestMapper.toResponseList(taskServicePort.getAll()));
         }
 
         @GetMapping("/{id}")
@@ -61,7 +61,7 @@ public class TaskController {
         public ResponseEntity<TaskResponse> getTaskById(
                         @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
                 return ResponseEntity.ok(
-                                taskRestMapper.toResponse(taskServicePort.getTaskById(id)));
+                                taskRestMapper.toResponse(taskServicePort.getById(id)));
         }
 
         @DeleteMapping("/{id}")
@@ -73,13 +73,8 @@ public class TaskController {
         })
         public ResponseEntity<DeleteResponse> deleteTask(
                         @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
-                taskServicePort.deleteTask(id);
-                return ResponseEntity.ok(DeleteResponse.builder()
-                                .message("Task deleted successfully")
-                                .resourceId(id)
-                                .status("SUCCESS")
-                                .timestamp(LocalDateTime.now())
-                                .build());
+                taskServicePort.delete(id);
+                return ResponseEntity.ok(DeleteResponse.createDeleteResponse(id));
         }
 
         @PostMapping("/{id}/assign-urgent")
@@ -97,19 +92,14 @@ public class TaskController {
         }
 
         @PostMapping("/auto-assign/urgent")
-        @Operation(summary = "Auto-assign all pending urgent tasks (Automatic)", description = "Automatically searches for all PENDING URGENT tasks and assigns them to available Masters, balancing the load based on the number of assigned urgent tasks. Scenario 2: Automatic assignment by the system.")
+        @Operation(summary = "Auto-assign all pending urgent tasks")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Auto-assignment completed"),
-                        @ApiResponse(responseCode = "500", description = "No Master technicians available")
+                @ApiResponse(responseCode = "200", description = "Auto-assignment completed"),
+                @ApiResponse(responseCode = "500", description = "No Master technicians available")
         })
         public ResponseEntity<AutoAssignResponse> autoAssignUrgentTasks() {
-                AutoAssignSummary result = taskServicePort.autoAssignAllUrgentTasks();
-                AutoAssignResponse response = AutoAssignResponse.builder()
-                                .assignedCount(result.assignedCount())
-                                .pendingCount(result.remainingPendingCount())
-                                .message(result.message())
-                                .status(result.success() ? "SUCCESS" : "PARTIAL")
-                                .build();
-                return ResponseEntity.ok(response);
+                return ResponseEntity.ok(
+                        taskRestMapper.toAutoAssignResponse(taskServicePort.autoAssignAllUrgentTasks())
+                );
         }
 }
