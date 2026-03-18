@@ -8,9 +8,12 @@ import com.fixit_ops_management.domain.enums.TaskStatus;
 
 import java.util.List;
 
+import java.util.List;
+
 @Repository
 public interface ITaskRepository extends JpaRepository<TaskEntity, Long> {
 
     long countByTechnicianIdAndPriority(Long technicianId, TaskPriority priority);
     List<TaskEntity> findByStatus(TaskStatus status);
+    List<TaskEntity> findByTechnicianId(Long technicianId);
 }

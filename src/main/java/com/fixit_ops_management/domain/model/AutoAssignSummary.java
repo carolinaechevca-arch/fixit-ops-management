@@ -1,9 +1,9 @@
-package com.fixit_ops_management.application.dto;
+package com.fixit_ops_management.domain.model;
 
 import lombok.Builder;
 
 @Builder
-public record AutoAssignResult(
+public record AutoAssignSummary(
                 long assignedCount,
                 long remainingPendingCount,
                 boolean success,

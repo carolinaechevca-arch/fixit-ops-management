@@ -17,6 +17,7 @@ public interface ITaskPersistencePort {
     void deleteById(Long id);
 
     long countUrgentTasksByTechnicianId(Long technicianId);
-    //RF13 Y RF14
     List<Task> findByStatus(TaskStatus status);
+
+    List<Task> findByTechnicianId(Long technicianId);
 }

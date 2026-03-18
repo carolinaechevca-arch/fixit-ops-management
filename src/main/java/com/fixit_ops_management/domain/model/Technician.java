@@ -31,6 +31,12 @@ public class Technician {
         return (this.currentPoints + points) <= this.category.getMaxPoints();
     }
 
+    public Integer getAvailablePoints(){
+        int maxPoints = category.getMaxPoints();
+        if (maxPoints == 0) return 100;
+        return maxPoints - this.currentPoints;
+    }
+
     //RF13 Y RF14
     public boolean canTakeTask(int points) {
         return (this.currentPoints + points) <= this.category.getMaxPoints();

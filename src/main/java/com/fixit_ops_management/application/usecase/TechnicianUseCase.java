@@ -1,8 +1,11 @@
 package com.fixit_ops_management.application.usecase;
 
 import com.fixit_ops_management.application.port.in.ITechnicianServicePort;
+import com.fixit_ops_management.application.port.out.ITaskPersistencePort;
 import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
+import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.model.Technician;
+import com.fixit_ops_management.domain.model.TechnicianWorkload;
 import com.fixit_ops_management.domain.service.TechnicianDomainService;
 import lombok.RequiredArgsConstructor;
 import  java.util.List;
@@ -13,11 +16,12 @@ public class TechnicianUseCase implements ITechnicianServicePort {
 
     private final ITechnicianPersistencePort technicianPersistencePort;
     private final TechnicianDomainService technicianDomainService;
+    private final ITaskPersistencePort taskPersistencePort;
 
     @Override
     public Technician createTechnician(Technician technician) {
         Optional<Technician> existingTechnician = technicianPersistencePort.findByDni(technician.getDni());
-        technicianDomainService.validateTechnicianDoesNotExist(existingTechnician, technician.getDni());
+        technicianDomainService.validateTechnicianDoesNotExistByDni(existingTechnician, technician.getDni());
 
         Technician newTechnician = Technician.createNew(
                 technician.getDni(),
@@ -37,5 +41,39 @@ public class TechnicianUseCase implements ITechnicianServicePort {
     public Technician getTechnicianById(Long id) {
         return technicianPersistencePort.findById(id)
                 .orElseThrow(() -> new RuntimeException("Technician not found"));
+    }
+
+    private Technician releaseTechnicianLoad(Technician technician, int pointsToRemove) {
+        int newPoints = Math.max(technician.getCurrentPoints() - pointsToRemove, 0);
+        int newTaskCount = Math.max(technician.getTaskCount() - 1, 0);
+
+        return technician.toBuilder()
+                .currentPoints(newPoints)
+                .taskCount(newTaskCount)
+                .status(calculateTechnicianStatus(technician, newPoints))
+                .build();
+    }
+
+    private com.fixit_ops_management.domain.enums.TechnicianStatus calculateTechnicianStatus(
+            Technician technician, int points) {
+
+        if (points == 0) {
+            return com.fixit_ops_management.domain.enums.TechnicianStatus.AVAILABLE;
+        }
+
+        if (points >= technician.getCategory().getMaxPoints()) {
+            return com.fixit_ops_management.domain.enums.TechnicianStatus.NOT_AVAILABLE;
+        }
+
+        return com.fixit_ops_management.domain.enums.TechnicianStatus.BUSY;
+    }
+
+    @Override
+    public TechnicianWorkload getTechnicianWorkload(Long id){
+        Technician technician = technicianDomainService.validateTechnicianExists(technicianPersistencePort.findById(id), id);
+
+        List<Task> tasks = taskPersistencePort.findByTechnicianId(id);
+
+        return TechnicianWorkload.createNew(technician, tasks);
     }
 }
