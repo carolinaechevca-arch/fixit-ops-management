@@ -3,6 +3,7 @@ package com.fixit_ops_management.application.usecase;
 import com.fixit_ops_management.application.port.in.ITechnicianServicePort;
 import com.fixit_ops_management.application.port.out.ITaskPersistencePort;
 import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;
+import com.fixit_ops_management.domain.enums.TechnicianCategory;
 import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.model.TechnicianWorkload;
@@ -75,5 +76,19 @@ public class TechnicianUseCase implements ITechnicianServicePort {
         List<Task> tasks = taskPersistencePort.findByTechnicianId(id);
 
         return TechnicianWorkload.createNew(technician, tasks);
+    }
+
+    @Override
+    public Technician updateTechnicianCategory(Long id, TechnicianCategory newTechnicianCategory){
+        Optional<Technician> technician = technicianPersistencePort.findById(id);
+        technicianDomainService.validateTechnicianExists(technician, id);
+        technicianDomainService.validateCanChangeCategory(technician.get());
+
+        Technician updatedTechnicianCategory = technician.get()
+                                                         .toBuilder()
+                                                         .category(newTechnicianCategory)
+                                                         .build();
+
+        return technicianPersistencePort.saveTechnician(updatedTechnicianCategory);
     }
 }
