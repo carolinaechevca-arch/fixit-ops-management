@@ -180,4 +180,125 @@ public class TaskServiceUseCase implements ITaskServicePort {
         return taskPersistencePort.save(updated);
     }
 
+
+    @Override
+    public Task updateTask(Long id, Task updatedTask) {
+
+        Task existingTask = getTaskById(id);
+
+        TaskPriority oldPriority = existingTask.getPriority();
+        TaskPriority newPriority = updatedTask.getPriority();
+
+        Task taskToSave = existingTask.toBuilder()
+                .name(updatedTask.getName())
+                .description(updatedTask.getDescription())
+                .priority(newPriority)
+                .build();
+
+        // Si la tarea no tiene técnico asignado
+        if (existingTask.getTechnicianId() == null) {
+            if (newPriority == TaskPriority.URGENT) {
+                return assignTaskToMaster(
+                        taskToSave.toBuilder()
+                                .status(TaskStatus.PENDING)
+                                .technicianId(null)
+                                .build()
+                );
+            }
+            return taskPersistencePort.save(taskToSave);
+        }
+
+        // Buscar técnico actual
+        Technician technician = technicianPersistencePort.findById(existingTask.getTechnicianId())
+                .orElse(null);
+
+        if (technician == null) {
+            return taskPersistencePort.save(
+                    taskToSave.toBuilder()
+                            .technicianId(null)
+                            .status(TaskStatus.PENDING)
+                            .build()
+            );
+        }
+
+        // Si cambia a URGENT, siempre se quita el actual y se manda a MASTER
+        if (newPriority == TaskPriority.URGENT) {
+
+            Technician releasedTechnician = releaseTechnicianLoad(technician, oldPriority.getPoints());
+            technicianPersistencePort.saveTechnician(releasedTechnician);
+
+            Task urgentTask = taskToSave.toBuilder()
+                    .technicianId(null)
+                    .status(TaskStatus.PENDING)
+                    .build();
+
+            return assignTaskToMaster(urgentTask);
+        }
+
+        // Si el técnico actual es MASTER y la tarea deja de ser urgente,
+        // ya no debe quedarse con la tarea
+        if (technician.getCategory() == TechnicianCategory.MASTER) {
+            Task unassignedTask = taskToSave.toBuilder()
+                    .technicianId(null)
+                    .status(TaskStatus.PENDING)
+                    .build();
+
+            return taskPersistencePort.save(unassignedTask);
+        }
+
+        // Recalcular puntos reales: restar la prioridad vieja y sumar la nueva
+        int recalculatedPoints = technician.getCurrentPoints()
+                - oldPriority.getPoints()
+                + newPriority.getPoints();
+
+        // Si ya no soporta la carga, quitar asignación y dejar en espera
+        if (recalculatedPoints > technician.getCategory().getMaxPoints()) {
+
+            Technician releasedTechnician = releaseTechnicianLoad(technician, oldPriority.getPoints());
+            technicianPersistencePort.saveTechnician(releasedTechnician);
+
+            Task unassignedTask = taskToSave.toBuilder()
+                    .technicianId(null)
+                    .status(TaskStatus.PENDING)
+                    .build();
+
+            return taskPersistencePort.save(unassignedTask);
+        }
+
+        // Si sí soporta la nueva carga, se actualiza el técnico y la tarea sigue asignada
+        Technician adjustedTechnician = technician.toBuilder()
+                .currentPoints(recalculatedPoints)
+                .status(calculateTechnicianStatus(technician, recalculatedPoints))
+                .build();
+
+        technicianPersistencePort.saveTechnician(adjustedTechnician);
+
+        return taskPersistencePort.save(taskToSave);
+
+
+    }
+
+    private Technician releaseTechnicianLoad(Technician technician, int pointsToRemove) {
+        int newPoints = Math.max(technician.getCurrentPoints() - pointsToRemove, 0);
+        int newTaskCount = Math.max(technician.getTaskCount() - 1, 0);
+
+        return technician.toBuilder()
+                .currentPoints(newPoints)
+                .taskCount(newTaskCount)
+                .status(calculateTechnicianStatus(technician, newPoints))
+                .build();
+    }
+
+    private TechnicianStatus calculateTechnicianStatus(Technician technician, int points) {
+        if (points == 0) {
+            return TechnicianStatus.AVAILABLE;
+        }
+
+        if (points >= technician.getCategory().getMaxPoints()) {
+            return TechnicianStatus.NOT_AVAILABLE;
+        }
+
+        return TechnicianStatus.BUSY;
+    }
+
 }
