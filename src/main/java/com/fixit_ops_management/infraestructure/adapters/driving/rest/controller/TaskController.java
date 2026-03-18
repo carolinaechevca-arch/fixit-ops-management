@@ -2,6 +2,7 @@ package com.fixit_ops_management.infraestructure.adapters.driving.rest.controlle
 
 import com.fixit_ops_management.application.dto.AutoAssignResult;
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
+import com.fixit_ops_management.domain.model.AutoAssignSummary;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TaskRequest;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.AutoAssignResponse;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.DeleteResponse;
@@ -105,7 +106,7 @@ public class TaskController {
                         @ApiResponse(responseCode = "500", description = "No Master technicians available")
         })
         public ResponseEntity<AutoAssignResponse> autoAssignUrgentTasks() {
-                AutoAssignResult result = taskServicePort.autoAssignAllUrgentTasks();
+                AutoAssignSummary result = taskServicePort.autoAssignAllUrgentTasks();
                 AutoAssignResponse response = AutoAssignResponse.builder()
                                 .assignedCount(result.assignedCount())
                                 .pendingCount(result.remainingPendingCount())
