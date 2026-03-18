@@ -1,5 +1,6 @@
 package com.fixit_ops_management.domain.service;
 
+import com.fixit_ops_management.domain.enums.TechnicianStatus;
 import com.fixit_ops_management.domain.exceptions.TechnicianAlreadyExistsException;
 import com.fixit_ops_management.domain.exceptions.TechnicianNotFoundException;
 import com.fixit_ops_management.domain.model.Technician;
@@ -23,5 +24,13 @@ public class TechnicianDomainService {
                         String.format(DomainConstants.TECHNICIAN_NOT_FOUND_MESSAGE, id)
                 )
         );
+    }
+
+    public void validateCanChangeCategory(Technician technician){
+        if (technician.getStatus() != TechnicianStatus.AVAILABLE || technician.getTaskCount() > 0){
+            throw new TechnicianNotFoundException(
+                    String.format("Category update failed: Technician has pending tasks or is busy.")
+            );
+        }
     }
 }
