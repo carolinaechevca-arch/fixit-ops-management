@@ -21,4 +21,10 @@ public interface ITaskServicePort {
 
     Task updateTask(Long id, Task task);
     AutoAssignSummary autoAssignAllUrgentTasks();
+
+    void processWaitingTasks();
+
+    void startTask(Long taskId);
+
+    void completeTask(Long taskId);
 }

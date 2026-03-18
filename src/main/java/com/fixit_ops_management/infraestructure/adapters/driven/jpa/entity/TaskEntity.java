@@ -1,5 +1,6 @@
 package com.fixit_ops_management.infraestructure.adapters.driven.jpa.entity;
 
+
 import com.fixit_ops_management.domain.enums.TaskPriority;
 import com.fixit_ops_management.domain.enums.TaskStatus;
 import jakarta.persistence.*;

@@ -1,6 +1,5 @@
 package com.fixit_ops_management.infraestructure.adapters.driving.rest.controller;
 
-import com.fixit_ops_management.application.dto.AutoAssignResult;
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
 import com.fixit_ops_management.domain.model.AutoAssignSummary;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TaskRequest;
@@ -131,4 +130,39 @@ public class TaskController {
                         )
                 );
         }
+
+        //RF13
+
+        @PostMapping("/process-waiting")
+        @Operation(summary = "Process waiting tasks", description = "Processes all tasks in WAITING status and attempts to assign them according to technician availability.")
+        @ApiResponse(responseCode = "200", description = "Waiting tasks processed successfully")
+        public ResponseEntity<String> processWaitingTasks() {
+                taskServicePort.processWaitingTasks();
+                return ResponseEntity.ok("Waiting tasks processed successfully");
+        }
+
+        //RF14
+        @PatchMapping("/{id}/start")
+        @Operation(summary = "Start task", description = "Changes the task status from ASSIGNED to IN_PROGRESS")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Task started successfully"),
+                @ApiResponse(responseCode = "404", description = "Task not found")
+        })
+        public ResponseEntity<String> startTask(@PathVariable Long id) {
+                taskServicePort.startTask(id);
+                return ResponseEntity.ok("Task started successfully");
+        }
+
+        @PatchMapping("/{id}/complete")
+        @Operation(summary = "Complete task", description = "Marks the task as completed and records the closing date automatically")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Task completed successfully"),
+                @ApiResponse(responseCode = "404", description = "Task not found")
+        })
+        public ResponseEntity<String> completeTask(@PathVariable Long id) {
+                taskServicePort.completeTask(id);
+                return ResponseEntity.ok("Task completed successfully");
+        }
+
+
 }
