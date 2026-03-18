@@ -173,6 +173,80 @@ public class TaskServiceUseCase implements ITaskServicePort {
         return taskPersistencePort.save(updated);
     }
 
+    //Nuevos RF13 Y RF14
+    @Override
+    public void processWaitingTasks() {
 
+        var waitingTasks = taskPersistencePort.findByStatus(TaskStatus.PENDING);
+
+        if (waitingTasks == null || waitingTasks.isEmpty()) {
+            return;
+        }
+
+        for (var task : waitingTasks) {
+
+            var technicians = technicianPersistencePort.findAll();
+
+            var ordered = technicians.stream()
+                    .sorted((t1, t2) -> Integer.compare(getPriorityOrder(t1), getPriorityOrder(t2)))
+                    .toList();
+            for (var tech : ordered) {
+                if (tech.canTakeTask(task.getPoints())) {
+
+                    task = task.assignTo(tech.getId());
+                    tech = tech.assignPoints(task.getPoints());
+
+                    taskPersistencePort.save(task);
+                    technicianPersistencePort.saveTechnician(tech);
+                    break;
+                }
+            }
+        }
+    }
+
+    private int getPriorityOrder(Technician tech) {
+        return switch (tech.getCategory()) {
+            case JUNIOR -> 1;
+            case SEMI_SENIOR -> 2;
+            case SENIOR -> 3;
+            case MASTER -> 4;
+        };
+    }
+
+    @Override
+    public void startTask(Long taskId) {
+        var task = taskPersistencePort.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getStatus().equals(TaskStatus.ASSIGNED)) {
+            throw new RuntimeException("Task must be ASSIGNED to start");
+        }
+
+        task = task.start();
+        taskPersistencePort.save(task);
+
+        taskPersistencePort.save(task);
+    }
+
+    @Override
+    public void completeTask(Long taskId) {
+        var task = taskPersistencePort.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getStatus().equals(TaskStatus.IN_PROGRESS)) {
+            throw new RuntimeException("Task must be IN_PROGRESS to complete");
+        }
+
+        var technician = technicianPersistencePort.findById(task.getTechnicianId())
+                .orElseThrow(() -> new RuntimeException("Technician not found"));
+
+
+        technician = technician.assignPoints(-task.getPoints());
+
+        task = task.complete();
+
+        technicianPersistencePort.saveTechnician(technician);
+        taskPersistencePort.save(task);
+    }
 
 }

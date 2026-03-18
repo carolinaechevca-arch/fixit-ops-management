@@ -18,4 +18,11 @@ public interface ITaskServicePort {
     Task assignUrgentTask(Long taskId);
 
     AutoAssignResult autoAssignAllUrgentTasks();
+
+    //RF/13 Y RF14
+    void processWaitingTasks();
+
+    void startTask(Long taskId);
+
+    void completeTask(Long taskId);
 }

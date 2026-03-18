@@ -6,6 +6,7 @@ import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.mapper.ITaskEntityMapper;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.repository.ITaskRepository;
 import lombok.RequiredArgsConstructor;
+import com.fixit_ops_management.domain.enums.TaskStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,4 +46,13 @@ public class TaskJpaAdapter implements ITaskPersistencePort {
     public long countUrgentTasksByTechnicianId(Long technicianId) {
         return taskRepository.countByTechnicianIdAndPriority(technicianId, TaskPriority.URGENT);
     }
+
+    @Override
+    public List<Task> findByStatus(TaskStatus status) {
+        return taskRepository.findByStatus(status)
+                .stream()
+                .map(taskEntityMapper::toDomain)
+                .toList();
+    }
+
 }
