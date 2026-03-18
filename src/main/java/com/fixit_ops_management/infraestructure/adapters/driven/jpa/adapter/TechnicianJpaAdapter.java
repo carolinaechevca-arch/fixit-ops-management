@@ -58,4 +58,11 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
                 .map(technicianEntityMapper::toDomain)
                 .toList();
     }
+    @Override
+    public List<Technician> findAllOrderedByHierarchy() {
+        return technicianRepository.findAllOrderedByHierarchy()
+                .stream()
+                .map(technicianEntityMapper::toDomain)
+                .toList();
+    }
 }

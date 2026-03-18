@@ -59,17 +59,16 @@ public class TechnicianUseCase implements ITechnicianServicePort {
     }
 
     @Override
-    public Technician updateCategory(Long id, TechnicianCategory newCategory) {
-        Technician technician = technicianDomainService.validateTechnicianExists(
-                technicianPersistencePort.findById(id), id);
+    public Technician updateTechnicianCategory(Long id, TechnicianCategory newTechnicianCategory){
+        Optional<Technician> technician = technicianPersistencePort.findById(id);
+        technicianDomainService.validateTechnicianExists(technician, id);
+        technicianDomainService.validateTechnicianCanChangeCategory(technician.get());
 
-        technicianDomainService.validateTechnicianCanChangeCategory(technician);
+        Technician updatedTechnicianCategory = technician.get()
+                                                         .toBuilder()
+                                                         .category(newTechnicianCategory)
+                                                         .build();
 
-        Technician updatedTechnician = technician.toBuilder()
-                .category(newCategory)
-                .build();
-
-        return technicianPersistencePort.save(updatedTechnician);
+        return technicianPersistencePort.save(updatedTechnicianCategory);
     }
-
 }

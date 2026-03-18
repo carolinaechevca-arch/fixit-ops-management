@@ -20,6 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.bind.annotation.PutMapping;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -102,4 +104,55 @@ public class TaskController {
                         taskRestMapper.toAutoAssignResponse(taskServicePort.autoAssignAllUrgentTasks())
                 );
         }
+
+        @PutMapping("/{id}")
+        @Operation(summary = "Update task", description = "Updates name, description and priority of a task, applying reassignment rules.")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Task updated successfully"),
+                @ApiResponse(responseCode = "404", description = "Task not found"),
+                @ApiResponse(responseCode = "500", description = "No Master technicians available")
+        })
+        public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id,
+                                                       @Valid @RequestBody TaskRequest request) {
+                return ResponseEntity.ok(
+                        taskRestMapper.toResponse(
+                                taskServicePort.updateTask(id, taskRestMapper.toDomain(request))
+                        )
+                );
+        }
+
+        //RF13
+
+        @PostMapping("/process-waiting")
+        @Operation(summary = "Process waiting tasks", description = "Processes all tasks in WAITING status and attempts to assign them according to technician availability.")
+        @ApiResponse(responseCode = "200", description = "Waiting tasks processed successfully")
+        public ResponseEntity<String> processWaitingTasks() {
+                taskServicePort.processWaitingTasks();
+                return ResponseEntity.ok("Waiting tasks processed successfully");
+        }
+
+        //RF14
+        @PatchMapping("/{id}/start")
+        @Operation(summary = "Start task", description = "Changes the task status from ASSIGNED to IN_PROGRESS")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Task started successfully"),
+                @ApiResponse(responseCode = "404", description = "Task not found")
+        })
+        public ResponseEntity<String> startTask(@PathVariable Long id) {
+                taskServicePort.startTask(id);
+                return ResponseEntity.ok("Task started successfully");
+        }
+
+        @PatchMapping("/{id}/complete")
+        @Operation(summary = "Complete task", description = "Marks the task as completed and records the closing date automatically")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Task completed successfully"),
+                @ApiResponse(responseCode = "404", description = "Task not found")
+        })
+        public ResponseEntity<String> completeTask(@PathVariable Long id) {
+                taskServicePort.completeTask(id);
+                return ResponseEntity.ok("Task completed successfully");
+        }
+
+
 }

@@ -2,7 +2,6 @@ package com.fixit_ops_management.infraestructure.adapters.driving.rest.controlle
 
 import com.fixit_ops_management.application.port.in.ITechnicianServicePort;
 import com.fixit_ops_management.domain.enums.TechnicianCategory;
-import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.model.TechnicianWorkload;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TechnicianRequest;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.TechnicianResponse;
@@ -18,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 
 @RestController
@@ -71,20 +72,20 @@ public class TechnicianController {
 
     }
 
-    @PatchMapping("/{id}/category")
-    @Operation(summary = "Update technician category",
-            description = "Changes the category of a technician only if they are currently AVAILABLE and have no tasks.")
+    @PutMapping("/{id}")
+    @Operation(summary = "Update technician category", description = "Updates technician category.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Category updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Technician is busy or has tasks"),
-            @ApiResponse(responseCode = "404", description = "Technician not found")
+            @ApiResponse(responseCode = "200", description = "Technician category updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Technician category not found"),
     })
-    public ResponseEntity<TechnicianResponse> updateCategory(
-            @PathVariable Long id,
-            @RequestParam TechnicianCategory newCategory) {
-
-        Technician updated = technicianServicePort.updateCategory(id, newCategory);
-        return ResponseEntity.ok(technicianRestMapper.toResponse(updated));
+    public ResponseEntity<TechnicianResponse> updateTechnicianCategory(@PathVariable Long id,
+                                                                       @Valid
+                                                                       @RequestParam TechnicianCategory newTechnicianCategory) {
+        return ResponseEntity.ok(
+                technicianRestMapper.toResponse(
+                        technicianServicePort.updateTechnicianCategory(id, newTechnicianCategory)
+                )
+        );
     }
 
     @DeleteMapping("/{id}")
