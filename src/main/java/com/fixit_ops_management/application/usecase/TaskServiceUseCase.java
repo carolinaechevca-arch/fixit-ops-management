@@ -1,6 +1,4 @@
 package com.fixit_ops_management.application.usecase;
-
-import com.fixit_ops_management.application.dto.AutoAssignResult;
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
 import com.fixit_ops_management.application.port.out.ITaskPersistencePort;
 import com.fixit_ops_management.application.port.out.ITechnicianPersistencePort;

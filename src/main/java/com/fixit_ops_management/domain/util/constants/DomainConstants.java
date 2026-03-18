@@ -7,6 +7,7 @@ public final class DomainConstants {
 
     public static final String TECHNICIAN_DNI_ALREADY_EXISTS_MESSAGE = "Technician with DNI %s already exists.";
     public static final String TECHNICIAN_NOT_FOUND_MESSAGE = "Technician with ID %s already exists.";
+    public static final String TECHNICIAN_CANNOT_BE_DELETED_MESSAGE = "Technician with id %d cannot be deleted because its status is %s.";
     public static final String TASK_NOT_FOUND_MESSAGE = "Task with id %d was not found.";
     public static final String TASK_CANNOT_BE_DELETED_MESSAGE = "Task with id %d cannot be deleted because its status is %s.";
     public static final String TASK_NOT_URGENT_MESSAGE = "Task must have URGENT priority to be assigned to Master technicians.";

@@ -50,4 +50,11 @@ public class TechnicianUseCase implements ITechnicianServicePort {
 
         return TechnicianWorkload.createNew(technician, tasks);
     }
+
+    @Override
+    public void deleteTechnician(Long id) {
+        Technician technician = getTechnicianById(id);
+        technicianDomainService.validateTechnicianCanBeDeleted(technician);
+        technicianPersistencePort.deleteById(id);
+    }
 }
