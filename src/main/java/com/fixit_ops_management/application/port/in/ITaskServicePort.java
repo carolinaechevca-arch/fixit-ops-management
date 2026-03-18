@@ -17,5 +17,8 @@ public interface ITaskServicePort {
 
     Task assignUrgentTask(Long taskId);
 
+
+
+    Task updateTask(Long id, Task task);
     AutoAssignSummary autoAssignAllUrgentTasks();
 }

@@ -1,5 +1,6 @@
 package com.fixit_ops_management.infraestructure.adapters.driving.rest.controller;
 
+import com.fixit_ops_management.application.dto.AutoAssignResult;
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
 import com.fixit_ops_management.domain.model.AutoAssignSummary;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TaskRequest;
@@ -19,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -111,5 +114,21 @@ public class TaskController {
                                 .status(result.success() ? "SUCCESS" : "PARTIAL")
                                 .build();
                 return ResponseEntity.ok(response);
+        }
+
+        @PutMapping("/{id}")
+        @Operation(summary = "Update task", description = "Updates name, description and priority of a task, applying reassignment rules.")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Task updated successfully"),
+                @ApiResponse(responseCode = "404", description = "Task not found"),
+                @ApiResponse(responseCode = "500", description = "No Master technicians available")
+        })
+        public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id,
+                                                       @Valid @RequestBody TaskRequest request) {
+                return ResponseEntity.ok(
+                        taskRestMapper.toResponse(
+                                taskServicePort.updateTask(id, taskRestMapper.toDomain(request))
+                        )
+                );
         }
 }

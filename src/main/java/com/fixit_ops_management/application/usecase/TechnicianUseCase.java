@@ -43,6 +43,31 @@ public class TechnicianUseCase implements ITechnicianServicePort {
                 .orElseThrow(() -> new RuntimeException("Technician not found"));
     }
 
+    private Technician releaseTechnicianLoad(Technician technician, int pointsToRemove) {
+        int newPoints = Math.max(technician.getCurrentPoints() - pointsToRemove, 0);
+        int newTaskCount = Math.max(technician.getTaskCount() - 1, 0);
+
+        return technician.toBuilder()
+                .currentPoints(newPoints)
+                .taskCount(newTaskCount)
+                .status(calculateTechnicianStatus(technician, newPoints))
+                .build();
+    }
+
+    private com.fixit_ops_management.domain.enums.TechnicianStatus calculateTechnicianStatus(
+            Technician technician, int points) {
+
+        if (points == 0) {
+            return com.fixit_ops_management.domain.enums.TechnicianStatus.AVAILABLE;
+        }
+
+        if (points >= technician.getCategory().getMaxPoints()) {
+            return com.fixit_ops_management.domain.enums.TechnicianStatus.NOT_AVAILABLE;
+        }
+
+        return com.fixit_ops_management.domain.enums.TechnicianStatus.BUSY;
+    }
+
     @Override
     public TechnicianWorkload getTechnicianWorkload(Long id){
         Technician technician = technicianDomainService.validateTechnicianExists(technicianPersistencePort.findById(id), id);
