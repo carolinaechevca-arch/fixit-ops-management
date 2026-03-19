@@ -1,6 +1,7 @@
 package com.fixit_ops_management.infraestructure.adapters.driving.rest.controller;
 
 import com.fixit_ops_management.application.port.in.ITechnicianServicePort;
+import com.fixit_ops_management.domain.enums.TechnicianCategory;
 import com.fixit_ops_management.domain.model.TechnicianWorkload;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TechnicianRequest;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.DeleteResponse;
@@ -41,7 +42,7 @@ public class TechnicianController {
     })
     public ResponseEntity<TechnicianResponse> createTechnician(@Valid @RequestBody TechnicianRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(technicianRestMapper.toResponse(technicianServicePort.createTechnician(
+                .body(technicianRestMapper.toResponse(technicianServicePort.create(
                         technicianRestMapper.toDomain(request)
                 )));
     }
@@ -49,7 +50,7 @@ public class TechnicianController {
     @GetMapping
     public ResponseEntity<List<TechnicianResponse>> getAllTechnicians() {
         return ResponseEntity.ok(
-                technicianServicePort.getAllTechnicians()
+                technicianServicePort.getAll()
                         .stream()
                         .map(technicianRestMapper::toResponse)
                         .toList()
@@ -60,10 +61,11 @@ public class TechnicianController {
     public ResponseEntity<TechnicianResponse> getTechnicianById(@PathVariable Long id) {
         return ResponseEntity.ok(
                 technicianRestMapper.toResponse(
-                        technicianServicePort.getTechnicianById(id)
+                        technicianServicePort.getById(id)
                 )
         );
     }
+
 
     @GetMapping("/{id}/workload")
     @Operation(summary = "Get technician workload and capacity")
@@ -71,6 +73,35 @@ public class TechnicianController {
       TechnicianWorkload workload = technicianServicePort.getTechnicianWorkload(id);
       return ResponseEntity.ok(technicianRestMapper.toWorkloadResponse(workload));
 
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update technician category", description = "Updates technician category.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Technician category updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Technician category not found"),
+    })
+    public ResponseEntity<TechnicianResponse> updateTechnicianCategory(@PathVariable Long id,
+                                                                       @Valid
+                                                                       @RequestParam TechnicianCategory newTechnicianCategory) {
+        return ResponseEntity.ok(
+                technicianRestMapper.toResponse(
+                        technicianServicePort.updateTechnicianCategory(id, newTechnicianCategory)
+                )
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a technician",
+            description = "Deletes a technician only if their status is AVAILABLE (RF-04).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Technician deleted successfully"),
+            @ApiResponse(responseCode = "400", description = "Technician is busy or not available"),
+            @ApiResponse(responseCode = "404", description = "Technician not found")
+    })
+    public ResponseEntity<Void> deleteTechnician(@PathVariable Long id) {
+        technicianServicePort.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

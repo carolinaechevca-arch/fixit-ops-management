@@ -3,6 +3,7 @@ package com.fixit_ops_management.domain.service;
 import com.fixit_ops_management.domain.enums.TechnicianStatus;
 import com.fixit_ops_management.domain.exceptions.TechnicianAlreadyExistsException;
 import com.fixit_ops_management.domain.exceptions.TechnicianCannotBeDeletedException;
+import com.fixit_ops_management.domain.exceptions.TechnicianBusyException;
 import com.fixit_ops_management.domain.exceptions.TechnicianNotFoundException;
 import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.util.constants.DomainConstants;
@@ -25,6 +26,15 @@ public class TechnicianDomainService {
                         String.format(DomainConstants.TECHNICIAN_NOT_FOUND_MESSAGE, id)
                 )
         );
+    }
+
+    public void validateTechnicianCanChangeCategory(Technician technician) {
+        if (technician.getStatus() != TechnicianStatus.AVAILABLE || technician.getTaskCount() > 0) {
+            throw new TechnicianBusyException(
+                    String.format(DomainConstants.TECHNICIAN_BUSY_MESSAGE,
+                            technician.getName())
+            );
+        }
     }
 
     public void validateTechnicianCanBeDeleted(Technician technician) {

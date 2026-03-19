@@ -39,22 +39,31 @@ public class AssignmentStrategy {
         int newPoints = technician.getCurrentPoints() + pointsToAdd;
         int newTaskCount = technician.getTaskCount() + 1;
 
-        TechnicianStatus nextStatus;
+        TechnicianStatus nextStatus = determineNextStatus(technician, newPoints, newTaskCount);
 
+        return buildUpdatedTechnician(technician, newPoints, newTaskCount, nextStatus);
+    }
+
+    private TechnicianStatus determineNextStatus(Technician technician, int points, int taskCount) {
         if (technician.getCategory() == TechnicianCategory.MASTER) {
-            nextStatus = (newTaskCount >= 3)
-                    ? TechnicianStatus.NOT_AVAILABLE
-                    : TechnicianStatus.BUSY;
-        } else {
-            nextStatus = (newPoints >= technician.getCategory().getMaxPoints())
-                    ? TechnicianStatus.NOT_AVAILABLE
-                    : TechnicianStatus.BUSY;
+            return calculateMasterStatus(taskCount);
         }
+        return calculateStandardStatus(technician.getCategory(), points);
+    }
 
+    private TechnicianStatus calculateMasterStatus(int taskCount) {
+        return (taskCount >= 3) ? TechnicianStatus.NOT_AVAILABLE : TechnicianStatus.BUSY;
+    }
+
+    private TechnicianStatus calculateStandardStatus(TechnicianCategory category, int points) {
+        return (points >= category.getMaxPoints()) ? TechnicianStatus.NOT_AVAILABLE : TechnicianStatus.BUSY;
+    }
+
+    private Technician buildUpdatedTechnician(Technician technician, int points, int tasks, TechnicianStatus status) {
         return technician.toBuilder()
-                .currentPoints(newPoints)
-                .taskCount(newTaskCount)
-                .status(nextStatus)
+                .currentPoints(points)
+                .taskCount(tasks)
+                .status(status)
                 .build();
     }
 
