@@ -1,10 +1,8 @@
 package com.fixit_ops_management.domain.service;
 
+import com.fixit_ops_management.domain.enums.TechnicianCategory;
 import com.fixit_ops_management.domain.enums.TechnicianStatus;
-import com.fixit_ops_management.domain.exceptions.TechnicianAlreadyExistsException;
-import com.fixit_ops_management.domain.exceptions.TechnicianCannotBeDeletedException;
-import com.fixit_ops_management.domain.exceptions.TechnicianBusyException;
-import com.fixit_ops_management.domain.exceptions.TechnicianNotFoundException;
+import com.fixit_ops_management.domain.exceptions.*;
 import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.util.constants.DomainConstants;
 
@@ -28,11 +26,17 @@ public class TechnicianDomainService {
         );
     }
 
-    public void validateTechnicianCanChangeCategory(Technician technician) {
+    public void validateTechnicianCanChangeCategory(Technician technician, TechnicianCategory newCategory) {
         if (technician.getStatus() != TechnicianStatus.AVAILABLE || technician.getTaskCount() > 0) {
             throw new TechnicianBusyException(
                     String.format(DomainConstants.TECHNICIAN_BUSY_MESSAGE,
                             technician.getName())
+            );
+        }
+        if (technician.getCategory().equals(newCategory)) {
+            throw new TechnicianSameCategoryException(
+                    String.format(DomainConstants.TECHNICIAN_SAME_CATEGORY_MESSAGE,
+                            technician.getId(), technician.getCategory())
             );
         }
     }
@@ -43,4 +47,21 @@ public class TechnicianDomainService {
                     String.format(DomainConstants.TECHNICIAN_CANNOT_BE_DELETED_MESSAGE, technician.getId(), technician.getStatus()));
         }
     }
+    public Technician releaseTechnicianLoad(Technician technician, int pointsToSubtract) {
+        int newPoints = Math.max(0, technician.getCurrentPoints() - pointsToSubtract);
+        int newTaskCount = Math.max(0, technician.getTaskCount() - 1);
+
+        TechnicianStatus newStatus = (newPoints < technician.getCategory().getMaxPoints())
+                ? TechnicianStatus.AVAILABLE
+                : TechnicianStatus.BUSY;
+
+        if (newTaskCount == 0) newStatus = TechnicianStatus.AVAILABLE;
+
+        return technician.toBuilder()
+                .currentPoints(newPoints)
+                .taskCount(newTaskCount)
+                .status(newStatus)
+                .build();
+    }
+
 }

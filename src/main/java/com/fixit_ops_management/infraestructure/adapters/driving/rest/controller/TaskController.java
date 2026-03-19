@@ -1,7 +1,6 @@
 package com.fixit_ops_management.infraestructure.adapters.driving.rest.controller;
 
 import com.fixit_ops_management.application.port.in.ITaskServicePort;
-import com.fixit_ops_management.domain.model.AutoAssignSummary;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TaskRequest;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.AutoAssignResponse;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.DeleteResponse;
@@ -20,9 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.PutMapping;
-
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -37,13 +33,13 @@ public class TaskController {
         @PostMapping
         @Operation(summary = "Create a new task with automatic assignment", description = "Creates a new task and automatically assigns it to an available technician. The system selects the best technician based on skill and availability.")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "201", description = "Task created successfully", content = @Content(schema = @Schema(implementation = TaskResponse.class))),
-                        @ApiResponse(responseCode = "400", description = "Invalid data in the request")
+                @ApiResponse(responseCode = "201", description = "Task created successfully", content = @Content(schema = @Schema(implementation = TaskResponse.class))),
+                @ApiResponse(responseCode = "400", description = "Invalid data in the request")
         })
         public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest request) {
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(taskRestMapper.toResponse(
-                                                taskServicePort.create(taskRestMapper.toDomain(request))));
+                        .body(taskRestMapper.toResponse(
+                                taskServicePort.create(taskRestMapper.toDomain(request))));
         }
 
         @GetMapping
@@ -51,30 +47,30 @@ public class TaskController {
         @ApiResponse(responseCode = "200", description = "Task list successfully obtained")
         public ResponseEntity<List<TaskResponse>> getAllTasks() {
                 return ResponseEntity.ok(
-                                taskRestMapper.toResponseList(taskServicePort.getAll()));
+                        taskRestMapper.toResponseList(taskServicePort.getAll()));
         }
 
         @GetMapping("/{id}")
         @Operation(summary = "Get details of a task", description = "Gets detailed information about a specific task by its ID")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Task found"),
-                        @ApiResponse(responseCode = "404", description = "Task not found")
+                @ApiResponse(responseCode = "200", description = "Task found"),
+                @ApiResponse(responseCode = "404", description = "Task not found")
         })
         public ResponseEntity<TaskResponse> getTaskById(
-                        @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
+                @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
                 return ResponseEntity.ok(
-                                taskRestMapper.toResponse(taskServicePort.getById(id)));
+                        taskRestMapper.toResponse(taskServicePort.getById(id)));
         }
 
         @DeleteMapping("/{id}")
         @Operation(summary = "Delete a task", description = "Deletes a task with business rule validation. Does not allow deleting tasks in IN_PROGRESS or COMPLETED status")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Task deleted successfully", content = @Content(schema = @Schema(implementation = DeleteResponse.class))),
-                        @ApiResponse(responseCode = "400", description = "The task cannot be deleted (invalid status)"),
-                        @ApiResponse(responseCode = "404", description = "Task not found")
+                @ApiResponse(responseCode = "200", description = "Task deleted successfully", content = @Content(schema = @Schema(implementation = DeleteResponse.class))),
+                @ApiResponse(responseCode = "400", description = "The task cannot be deleted (invalid status)"),
+                @ApiResponse(responseCode = "404", description = "Task not found")
         })
         public ResponseEntity<DeleteResponse> deleteTask(
-                        @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
+                @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
                 taskServicePort.delete(id);
                 return ResponseEntity.ok(DeleteResponse.createDeleteResponse(id));
         }
@@ -82,15 +78,15 @@ public class TaskController {
         @PostMapping("/{id}/assign-urgent")
         @Operation(summary = "Assign urgent task to Master (Manual)", description = "Assigns a specific urgent task to the Master with the least load of urgent tasks. Scenario 1: Manual assignment control.")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Task assigned successfully to Master", content = @Content(schema = @Schema(implementation = TaskResponse.class))),
-                        @ApiResponse(responseCode = "400", description = "The task is not urgent"),
-                        @ApiResponse(responseCode = "404", description = "Task not found"),
-                        @ApiResponse(responseCode = "500", description = "No Master technicians available")
+                @ApiResponse(responseCode = "200", description = "Task assigned successfully to Master", content = @Content(schema = @Schema(implementation = TaskResponse.class))),
+                @ApiResponse(responseCode = "400", description = "The task is not urgent"),
+                @ApiResponse(responseCode = "404", description = "Task not found"),
+                @ApiResponse(responseCode = "500", description = "No Master technicians available")
         })
         public ResponseEntity<TaskResponse> assignUrgentTask(
-                        @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
+                @Parameter(description = "Task ID", required = true) @PathVariable Long id) {
                 return ResponseEntity.status(HttpStatus.OK)
-                                .body(taskRestMapper.toResponse(taskServicePort.assignUrgentTask(id)));
+                        .body(taskRestMapper.toResponse(taskServicePort.assignUrgentTask(id)));
         }
 
         @PostMapping("/auto-assign/urgent")
@@ -121,7 +117,6 @@ public class TaskController {
                 );
         }
 
-        //RF13
 
         @PostMapping("/process-waiting")
         @Operation(summary = "Process waiting tasks", description = "Processes all tasks in WAITING status and attempts to assign them according to technician availability.")
@@ -131,7 +126,6 @@ public class TaskController {
                 return ResponseEntity.ok("Waiting tasks processed successfully");
         }
 
-        //RF14
         @PatchMapping("/{id}/start")
         @Operation(summary = "Start task", description = "Changes the task status from ASSIGNED to IN_PROGRESS")
         @ApiResponses(value = {

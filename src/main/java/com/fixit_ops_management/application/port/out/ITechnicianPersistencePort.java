@@ -7,14 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ITechnicianPersistencePort extends ICrudPersistencePort<Technician, Long> {
-
     Optional<Technician> findByDni(String dni);
-    List<Technician> findAllTechnicians();
     Optional<Technician> findById(Long id);
     void deleteById(Long id);
     List<Technician> findAll();
-
     List<Technician> findByCategory(TechnicianCategory category);
-    //List<Task> findByStatus(String status);
-    List<Technician> findAllOrderedByHierarchy();
 }

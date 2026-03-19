@@ -26,34 +26,13 @@ public class Technician {
                 .currentPoints(0)
                 .build();
     }
-    public boolean canAcceptTaskPoints(int points) {
-        if (this.category == TechnicianCategory.MASTER) return false;
-        return (this.currentPoints + points) <= this.category.getMaxPoints();
-    }
+
 
     public Integer getAvailablePoints(){
         int maxPoints = category.getMaxPoints();
-        if (maxPoints == 0) return 100;
+        if (maxPoints == 0) return 0;
         return maxPoints - this.currentPoints;
     }
 
-    //RF13 Y RF14
-    public boolean canTakeTask(int points) {
-        return (this.currentPoints + points) <= this.category.getMaxPoints();
-    }
 
-    public Technician assignPoints(int points) {
-        return this.toBuilder()
-                .currentPoints(this.currentPoints + points)
-                .build();
-    }
-
-    private int getMaxCapacity() {
-        return switch (this.category) {
-            case JUNIOR -> 8;
-            case SEMI_SENIOR -> 13;
-            case SENIOR -> 21;
-            case MASTER -> Integer.MAX_VALUE;
-        };
-    }
 }

@@ -12,8 +12,7 @@ import java.util.List;
         unmappedSourcePolicy = ReportingPolicy.IGNORE)
 public interface ITaskEntityMapper {
 
-    /* Patrón Mapper: Aísla el modelo de datos de la base de datos
-       del modelo de negocio inmutable. */
+
 
     TaskEntity toEntity(Task task);
 

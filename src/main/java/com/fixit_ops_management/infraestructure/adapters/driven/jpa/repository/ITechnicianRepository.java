@@ -13,11 +13,4 @@ public interface ITechnicianRepository extends JpaRepository<TechnicianEntity, L
 
     List<TechnicianEntity> findByCategory(TechnicianCategory category);
 
-    //RF13 Y RF14
-    @Query("SELECT t FROM TechnicianEntity t ORDER BY " +
-            "CASE t.category " +
-            "WHEN 'Junior' THEN 1 " +
-            "WHEN 'SemiSenior' THEN 2 " +
-            "WHEN 'Senior' THEN 3 END")
-    List<TechnicianEntity> findAllOrderedByHierarchy();
 }

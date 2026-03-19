@@ -2,11 +2,11 @@ package com.fixit_ops_management.infraestructure.adapters.driven.jpa.adapter;
 
 import com.fixit_ops_management.application.port.out.ITaskPersistencePort;
 import com.fixit_ops_management.domain.enums.TaskPriority;
+import com.fixit_ops_management.domain.enums.TaskStatus;
 import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.mapper.ITaskEntityMapper;
 import com.fixit_ops_management.infraestructure.adapters.driven.jpa.repository.ITaskRepository;
 import lombok.RequiredArgsConstructor;
-import com.fixit_ops_management.domain.enums.TaskStatus;
 
 import java.util.List;
 import java.util.Optional;

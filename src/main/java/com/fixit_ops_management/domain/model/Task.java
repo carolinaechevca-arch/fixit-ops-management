@@ -19,7 +19,7 @@ public class Task {
     LocalDateTime createdAt;
     LocalDateTime closedAt;
 
-    public static Task createNew(String name, String description, TaskPriority priority) {
+    public static Task createNewPending(String name, String description, TaskPriority priority) {
         return Task.builder()
                 .name(name)
                 .description(description)
@@ -28,6 +28,7 @@ public class Task {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
 
     public boolean isUrgent() {
         return TaskPriority.URGENT.equals(priority);

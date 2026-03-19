@@ -50,9 +50,9 @@ public class ControllerAdvisor {
     @ExceptionHandler(NoMasterTechniciansAvailableException.class)
     public ResponseEntity<ExceptionResponse> handleNoMasterTechniciansAvailableException(
             NoMasterTechniciansAvailableException exception) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ExceptionResponse(
-                exception.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ExceptionResponse(
+                exception.getMessage(), HttpStatus.CONFLICT.getReasonPhrase(), LocalDateTime.now(),
+                HttpStatus.CONFLICT.value()));
     }
 
     @ExceptionHandler(TaskNotUrgentException.class)
@@ -64,6 +64,39 @@ public class ControllerAdvisor {
 
     @ExceptionHandler(TechnicianBusyException.class)
     public ResponseEntity<ExceptionResponse> handleTechnicianBusyException(TechnicianBusyException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ExceptionResponse(
+                exception.getMessage(), HttpStatus.BAD_REQUEST.getReasonPhrase(), LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value()));
+    }
+    @ExceptionHandler(TechnicianSameCategoryException.class)
+    public ResponseEntity<ExceptionResponse> handleTechnicianSameCategoryException(TechnicianSameCategoryException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ExceptionResponse(
+                exception.getMessage(), HttpStatus.BAD_REQUEST.getReasonPhrase(), LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value()));
+    }
+
+    @ExceptionHandler(TechnicianNotFoundException.class)
+    public ResponseEntity<ExceptionResponse> handleTechnicianNotFoundException(TechnicianNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ExceptionResponse(
+                exception.getMessage(), HttpStatus.NOT_FOUND.getReasonPhrase(), LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(TaskAlreadyHasPriorityException.class)
+    public ResponseEntity<ExceptionResponse> handleTaskAlreadyHasPriority(TaskAlreadyHasPriorityException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ExceptionResponse(
+                exception.getMessage(), HttpStatus.BAD_REQUEST.getReasonPhrase(), LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value()));
+    }
+    @ExceptionHandler(TaskMustBeAssignedToStartException.class)
+    public ResponseEntity<ExceptionResponse> handleTaskMustBeAssignedToStart(TaskMustBeAssignedToStartException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ExceptionResponse(
+                exception.getMessage(), HttpStatus.BAD_REQUEST.getReasonPhrase(), LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value()));
+    }
+
+    @ExceptionHandler(TaskMustBeProgressToStartException.class)
+    public ResponseEntity<ExceptionResponse> handleTaskMustBeProgressToStart(TaskMustBeProgressToStartException exception) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ExceptionResponse(
                 exception.getMessage(), HttpStatus.BAD_REQUEST.getReasonPhrase(), LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value()));

@@ -16,8 +16,4 @@ public class RestConstants {
         public static final String TASK_NAME_REQUIRED = "Task name is required";
         public static final String PRIORITY_REQUIRED = "Priority is required (LOW, MEDIUM, HIGH, URGENT)";
         public static final String PRIORITY_VALID = "Priority must be LOW, MEDIUM, HIGH, or URGENT";
-
-        public static final String NO_MASTER_AVAILABLE = "No Master technicians available in the system.";
-        public static final String TASK_NOT_FOUND = "Task not found with ID: %s";
-        public static final String TECHNICIAN_NOT_FOUND = "Technician not found with ID: %s";
-    }
+}

@@ -3,7 +3,6 @@ package com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.respo
 import lombok.Builder;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Builder
 public record DeleteResponse(

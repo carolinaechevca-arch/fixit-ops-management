@@ -4,14 +4,10 @@ import com.fixit_ops_management.application.port.in.ITechnicianServicePort;
 import com.fixit_ops_management.domain.enums.TechnicianCategory;
 import com.fixit_ops_management.domain.model.TechnicianWorkload;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.request.TechnicianRequest;
-import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.DeleteResponse;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.TechnicianResponse;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.dto.response.TechnicianWorkloadResponse;
 import com.fixit_ops_management.infraestructure.adapters.driving.rest.mapper.ITechnicianRestMapper;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -101,24 +96,7 @@ public class TechnicianController {
     })
     public ResponseEntity<Void> deleteTechnician(@PathVariable Long id) {
         technicianServicePort.delete(id);
-        return ResponseEntity.noContent().build();
+            return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a technician", description = "Delete a technician with business rule validation. Does not allow techs who are busy or have any task")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Technician deleted successfully", content = @Content(schema = @Schema(implementation = DeleteResponse.class))),
-            @ApiResponse(responseCode = "400", description = "The technician cannot be deleted (BUSY)"),
-            @ApiResponse(responseCode = "404", description = "Technician not found")
-    })
-    public ResponseEntity<DeleteResponse> deleteTechnician(
-            @Parameter(description = "Technician ID", required = true) @PathVariable Long id) {
-        technicianServicePort.deleteTechnician(id);
-        return ResponseEntity.ok(DeleteResponse.builder()
-                .message("Technician deleted successfully")
-                .resourceId(id)
-                .status("SUCCESS")
-                .timestamp(LocalDateTime.now())
-                .build());
-    }
 }

@@ -67,9 +67,10 @@ public class BeanConfiguration {
     public ITaskServicePort taskServicePort(
             ITaskPersistencePort taskPersistencePort,
             ITechnicianPersistencePort technicianPersistencePort,
+            TechnicianDomainService technicianDomainService,
             TaskDomainService taskDomainService,
             AssignmentStrategy assignmentStrategy
     ) {
-        return new TaskServiceUseCase(taskPersistencePort, technicianPersistencePort, taskDomainService, assignmentStrategy);
+        return new TaskServiceUseCase(taskPersistencePort, technicianPersistencePort, technicianDomainService, taskDomainService, assignmentStrategy);
     }
 }

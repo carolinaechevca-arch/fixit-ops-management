@@ -31,6 +31,7 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
 
 
 
+
     @Override
     public Optional<Technician> findById(Long id) {
         return technicianRepository.findById(id)
@@ -45,11 +46,6 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
                 .toList();
     }
 
-    @Override
-    public void deleteById(Long id) {
-        technicianRepository.deleteById(id);
-
-    }
 
     @Override
     public List<Technician> findByCategory(TechnicianCategory category) {
@@ -58,13 +54,7 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
                 .map(technicianEntityMapper::toDomain)
                 .toList();
     }
-    @Override
-    public List<Technician> findAllOrderedByHierarchy() {
-        return technicianRepository.findAllOrderedByHierarchy()
-                .stream()
-                .map(technicianEntityMapper::toDomain)
-                .toList();
-    }
+
 
     @Override
     public void deleteById(Long id) {

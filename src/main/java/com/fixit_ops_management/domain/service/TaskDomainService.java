@@ -1,10 +1,7 @@
 package com.fixit_ops_management.domain.service;
 
 import com.fixit_ops_management.domain.enums.TaskStatus;
-import com.fixit_ops_management.domain.exceptions.NoMasterTechniciansAvailableException;
-import com.fixit_ops_management.domain.exceptions.TaskCannotBeDeletedException;
-import com.fixit_ops_management.domain.exceptions.TaskNotFoundException;
-import com.fixit_ops_management.domain.exceptions.TaskNotUrgentException;
+import com.fixit_ops_management.domain.exceptions.*;
 import com.fixit_ops_management.domain.model.MasterWithUrgentCount;
 import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.model.Technician;
@@ -22,12 +19,14 @@ public class TaskDomainService {
                     String.format(DomainConstants.TASK_CANNOT_BE_DELETED_MESSAGE, task.getId(), task.getStatus()));
         }
     }
+
     public Task validateTaskExist(Optional<Task> task, Long id) {
         if (!task.isPresent()) {
             throw new TaskNotFoundException(String.format(DomainConstants.TASK_NOT_FOUND_MESSAGE, id));
         }
         return task.get();
     }
+
     public void validateTaskUrgent(Task task) {
         if (!task.isUrgent()) {
             throw new TaskNotUrgentException(DomainConstants.TASK_NOT_URGENT_MESSAGE);
@@ -38,7 +37,8 @@ public class TaskDomainService {
                     DomainConstants.TASK_NOT_ASSIGNED_MESSAGE);
         }
     }
-    public List<Task> getPendingUrgentTasks( List<Task> tasks) {
+
+    public List<Task> getPendingUrgentTasks(List<Task> tasks) {
         return tasks.stream()
                 .filter(Task::isUrgent)
                 .filter(task -> TaskStatus.PENDING.equals(task.getStatus()))
@@ -64,4 +64,22 @@ public class TaskDomainService {
         return candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
     }
 
+    public void validatePriorityTask(Task existingTask, Task updatedTask) {
+        if (existingTask.getPriority().equals(updatedTask.getPriority())) {
+            throw new TaskAlreadyHasPriorityException(DomainConstants.TASK_ALREADY_HAS_PRIORITY , updatedTask.getId());
+        }
+
+
+    }
+    public void validateStatusAssigned(Task task) {
+        if (!task.getStatus().equals(TaskStatus.ASSIGNED)) {
+        throw new TaskMustBeAssignedToStartException(DomainConstants.TASK_MUST_BE_ASSIGNED_TO_START);
+    }
+    }
+
+    public void validateStatusProgress(Task task) {
+        if (!task.getStatus().equals(TaskStatus.IN_PROGRESS)) {
+            throw new TaskMustBeProgressToStartException(DomainConstants.TASK_MUST_BE_IN_PROGRESS);
+        }
+    }
 }

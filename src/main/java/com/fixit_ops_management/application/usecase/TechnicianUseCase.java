@@ -44,10 +44,7 @@ public class TechnicianUseCase implements ITechnicianServicePort {
         return technicianDomainService.validateTechnicianExists(technicianPersistencePort.findById(id), id);
     }
 
-    @Override
-    public void delete(Long id) {
-        technicianPersistencePort.deleteById(getById(id).getId());
-    }
+
 
     @Override
     public TechnicianWorkload getTechnicianWorkload(Long id){
@@ -62,7 +59,7 @@ public class TechnicianUseCase implements ITechnicianServicePort {
     public Technician updateTechnicianCategory(Long id, TechnicianCategory newTechnicianCategory){
         Optional<Technician> technician = technicianPersistencePort.findById(id);
         technicianDomainService.validateTechnicianExists(technician, id);
-        technicianDomainService.validateTechnicianCanChangeCategory(technician.get());
+        technicianDomainService.validateTechnicianCanChangeCategory(technician.get(), newTechnicianCategory);
 
         Technician updatedTechnicianCategory = technician.get()
                                                          .toBuilder()
@@ -73,9 +70,14 @@ public class TechnicianUseCase implements ITechnicianServicePort {
     }
 
     @Override
-    public void deleteTechnician(Long id) {
+    public void delete(Long id) {
         Technician technician = getTechnicianById(id);
         technicianDomainService.validateTechnicianCanBeDeleted(technician);
         technicianPersistencePort.deleteById(id);
+    }
+
+    @Override
+    public Technician getTechnicianById(Long id) {
+        return null;
     }
 }

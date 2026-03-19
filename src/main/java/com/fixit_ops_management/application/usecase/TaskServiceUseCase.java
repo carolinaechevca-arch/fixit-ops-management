@@ -7,38 +7,41 @@ import com.fixit_ops_management.domain.enums.TaskPriority;
 import com.fixit_ops_management.domain.enums.TaskStatus;
 import com.fixit_ops_management.domain.enums.TechnicianCategory;
 import com.fixit_ops_management.domain.enums.TechnicianStatus;
-import com.fixit_ops_management.domain.exceptions.NoMasterTechniciansAvailableException;
 import com.fixit_ops_management.domain.model.AutoAssignSummary;
 import com.fixit_ops_management.domain.model.MasterWithUrgentCount;
 import com.fixit_ops_management.domain.model.Task;
 import com.fixit_ops_management.domain.model.Technician;
 import com.fixit_ops_management.domain.service.AssignmentStrategy;
 import com.fixit_ops_management.domain.service.TaskDomainService;
-import com.fixit_ops_management.domain.util.constants.DomainConstants;
+import com.fixit_ops_management.domain.service.TechnicianDomainService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 
 @RequiredArgsConstructor
 public class TaskServiceUseCase implements ITaskServicePort {
 
     private final ITaskPersistencePort taskPersistencePort;
     private final ITechnicianPersistencePort technicianPersistencePort;
-
+    private final TechnicianDomainService technicianDomainService;
     private final TaskDomainService taskDomainService;
     private final AssignmentStrategy assignmentStrategy;
 
     @Override
     public Task create(Task task) {
-        Task newTask = Task.createNew(task.getName(), task.getDescription(), task.getPriority());
+        Task newTask = Task.createNewPending(task.getName(), task.getDescription(), task.getPriority());
         return (newTask.isUrgent()) ? handleUrgentCreation(newTask) : handleStandardCreation(newTask);
     }
 
     private Task handleUrgentCreation(Task task) {
-        List<Technician> masters = technicianPersistencePort.findByCategory(TechnicianCategory.MASTER);
-        if (masters.isEmpty()) return taskPersistencePort.save(task);
+        List<Technician> availableMasters = technicianPersistencePort.findByCategory(TechnicianCategory.MASTER).stream()
+                .filter(m -> m.getStatus() != TechnicianStatus.NOT_AVAILABLE)
+                .toList();
+
+        if (availableMasters.isEmpty()) {
+            return taskPersistencePort.save(task);
+        }
+
         return assignTaskToMaster(task);
     }
 
@@ -63,9 +66,24 @@ public class TaskServiceUseCase implements ITaskServicePort {
     public void delete(Long id) {
         Task task = getById(id);
         taskDomainService.validateTaskCanBeDeleted(task);
+
+        if (task.getTechnicianId() != null) {
+            updateTechnicianOnTaskDeletion(task);
+        }
+
         taskPersistencePort.deleteById(id);
     }
 
+    private void updateTechnicianOnTaskDeletion(Task task) {
+        technicianPersistencePort.findById(task.getTechnicianId())
+                .ifPresent(technician -> {
+                    Technician updatedTechnician = assignmentStrategy.releaseTechnicianLoad(
+                            technician,
+                            task.getPriority().getPoints()
+                    );
+                    technicianPersistencePort.save(updatedTechnician);
+                });
+    }
 
     @Override
     public AutoAssignSummary autoAssignAllUrgentTasks() {
@@ -85,7 +103,6 @@ public class TaskServiceUseCase implements ITaskServicePort {
     public Task assignUrgentTask(Long taskId) {
         Task task = getById(taskId);
         taskDomainService.validateTaskUrgent(task);
-
         return assignTaskToMaster(task);
     }
 
@@ -93,6 +110,10 @@ public class TaskServiceUseCase implements ITaskServicePort {
         List<Technician> masters = technicianPersistencePort.findByCategory(TechnicianCategory.MASTER).stream()
                 .filter(m -> m.getStatus() != TechnicianStatus.NOT_AVAILABLE)
                 .toList();
+
+        if (masters.isEmpty()) {
+            return taskPersistencePort.save(task);
+        }
 
         List<MasterWithUrgentCount> mastersWithCount = masters.stream()
                 .map(m -> new MasterWithUrgentCount(m, taskPersistencePort.countUrgentTasksByTechnicianId(m.getId())))
@@ -116,188 +137,120 @@ public class TaskServiceUseCase implements ITaskServicePort {
 
     @Override
     public void processWaitingTasks() {
-
-        var waitingTasks = taskPersistencePort.findByStatus(TaskStatus.PENDING);
+        List<Task> waitingTasks = taskPersistencePort.findByStatus(TaskStatus.PENDING);
 
         if (waitingTasks == null || waitingTasks.isEmpty()) {
             return;
         }
 
-        for (var task : waitingTasks) {
+        List<Technician> technicians = technicianPersistencePort.findAll();
 
-            var technicians = technicianPersistencePort.findAll();
-
-            var ordered = technicians.stream()
-                    .sorted((t1, t2) -> Integer.compare(getPriorityOrder(t1), getPriorityOrder(t2)))
-                    .toList();
-            for (var tech : ordered) {
-                if (tech.canTakeTask(task.getPoints())) {
-
-                    task = task.assignTo(tech.getId());
-                    tech = tech.assignPoints(task.getPoints());
-
-                    taskPersistencePort.save(task);
-                    technicianPersistencePort.save(tech);
-                    break;
-                }
-            }
+        for (Task task : waitingTasks) {
+            assignmentStrategy.findTechnicianByHierarchy(technicians, task)
+                    .ifPresent(selected -> executeAssignment(task, selected, task.getPriority().getPoints()));
         }
-    }
-
-    private int getPriorityOrder(Technician tech) {
-        return switch (tech.getCategory()) {
-            case JUNIOR -> 1;
-            case SEMI_SENIOR -> 2;
-            case SENIOR -> 3;
-            case MASTER -> 4;
-        };
     }
 
     @Override
     public void startTask(Long taskId) {
-        var task = taskPersistencePort.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+        Task task = getById(taskId);
+        taskDomainService.validateStatusAssigned(task);
 
-        if (!task.getStatus().equals(TaskStatus.ASSIGNED)) {
-            throw new RuntimeException("Task must be ASSIGNED to start");
-        }
-
-        task = task.start();
-        taskPersistencePort.save(task);
-
-        taskPersistencePort.save(task);
+        Task startedTask = task.start();
+        taskPersistencePort.save(startedTask);
     }
 
     @Override
     public void completeTask(Long taskId) {
-        var task = taskPersistencePort.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+        Task task = getById(taskId);
+        taskDomainService.validateStatusProgress(task);
 
-        if (!task.getStatus().equals(TaskStatus.IN_PROGRESS)) {
-            throw new RuntimeException("Task must be IN_PROGRESS to complete");
-        }
+        Technician technician = technicianDomainService.validateTechnicianExists(
+                technicianPersistencePort.findById(task.getTechnicianId()),
+                task.getTechnicianId()
+        );
 
-        var technician = technicianPersistencePort.findById(task.getTechnicianId())
-                .orElseThrow(() -> new RuntimeException("Technician not found"));
+        Technician updatedTechnician = assignmentStrategy.releaseTechnicianLoad(
+                technician,
+                task.getPriority().getPoints()
+        );
 
+        Task completedTask = task.complete();
 
-        technician = technician.assignPoints(-task.getPoints());
-
-        task = task.complete();
-
-        technicianPersistencePort.save(technician);
-        taskPersistencePort.save(task);
+        technicianPersistencePort.save(updatedTechnician);
+        taskPersistencePort.save(completedTask);
     }
+
     @Override
     public Task updateTask(Long id, Task updatedTask) {
-
         Task existingTask = getById(id);
-
-        TaskPriority oldPriority = existingTask.getPriority();
-        TaskPriority newPriority = updatedTask.getPriority();
-
-        Task taskToSave = existingTask.toBuilder()
-                .name(updatedTask.getName())
-                .description(updatedTask.getDescription())
-                .priority(newPriority)
-                .build();
+        taskDomainService.validatePriorityTask(existingTask, updatedTask);
+        Task taskToSave = mapBasicInfo(existingTask, updatedTask);
 
         if (existingTask.getTechnicianId() == null) {
-            if (newPriority == TaskPriority.URGENT) {
-                return assignTaskToMaster(
-                        taskToSave.toBuilder()
-                                .status(TaskStatus.PENDING)
-                                .technicianId(null)
-                                .build()
-                );
-            }
-            return taskPersistencePort.save(taskToSave);
+            return handleUnassignedTaskUpdate(taskToSave);
         }
 
         Technician technician = technicianPersistencePort.findById(existingTask.getTechnicianId())
                 .orElse(null);
 
         if (technician == null) {
-            return taskPersistencePort.save(
-                    taskToSave.toBuilder()
-                            .technicianId(null)
-                            .status(TaskStatus.PENDING)
-                            .build()
-            );
+            return saveAsUnassigned(taskToSave);
         }
 
-        if (newPriority == TaskPriority.URGENT) {
+        return processTaskWithTechnician(taskToSave, existingTask, technician);
+    }
 
-            Technician releasedTechnician = releaseTechnicianLoad(technician, oldPriority.getPoints());
-            technicianPersistencePort.save(releasedTechnician);
+    private Task processTaskWithTechnician(Task taskToSave, Task existingTask, Technician technician) {
+        TaskPriority oldPriority = existingTask.getPriority();
+        TaskPriority newPriority = taskToSave.getPriority();
 
-            Task urgentTask = taskToSave.toBuilder()
-                    .technicianId(null)
-                    .status(TaskStatus.PENDING)
-                    .build();
-
-            return assignTaskToMaster(urgentTask);
+        if (newPriority == TaskPriority.URGENT || technician.getCategory() == TechnicianCategory.MASTER) {
+            releaseAndSaveTechnician(technician, oldPriority.getPoints());
+            return assignTaskToMaster(prepareForUnassignment(taskToSave));
         }
 
-        if (technician.getCategory() == TechnicianCategory.MASTER) {
-            Task unassignedTask = taskToSave.toBuilder()
-                    .technicianId(null)
-                    .status(TaskStatus.PENDING)
-                    .build();
+        int newTotalPoints = assignmentStrategy.calculateRecalculatedPoints(technician, oldPriority.getPoints(), newPriority.getPoints());
 
-            return taskPersistencePort.save(unassignedTask);
+        if (assignmentStrategy.isOverloaded(technician, newTotalPoints)) {
+            releaseAndSaveTechnician(technician, oldPriority.getPoints());
+            return saveAsUnassigned(taskToSave);
         }
 
-        int recalculatedPoints = technician.getCurrentPoints()
-                - oldPriority.getPoints()
-                + newPriority.getPoints();
-
-        if (recalculatedPoints > technician.getCategory().getMaxPoints()) {
-
-            Technician releasedTechnician = releaseTechnicianLoad(technician, oldPriority.getPoints());
-            technicianPersistencePort.save(releasedTechnician);
-
-            Task unassignedTask = taskToSave.toBuilder()
-                    .technicianId(null)
-                    .status(TaskStatus.PENDING)
-                    .build();
-
-            return taskPersistencePort.save(unassignedTask);
-        }
-
-        Technician adjustedTechnician = technician.toBuilder()
-                .currentPoints(recalculatedPoints)
-                .status(calculateTechnicianStatus(technician, recalculatedPoints))
-                .build();
-
-        technicianPersistencePort.save(adjustedTechnician);
+        Technician updatedTech = assignmentStrategy.updateTechnicianPoints(technician, newTotalPoints);
+        technicianPersistencePort.save(updatedTech);
 
         return taskPersistencePort.save(taskToSave);
-
-
     }
 
-    private Technician releaseTechnicianLoad(Technician technician, int pointsToRemove) {
-        int newPoints = Math.max(technician.getCurrentPoints() - pointsToRemove, 0);
-        int newTaskCount = Math.max(technician.getTaskCount() - 1, 0);
+    private Task handleUnassignedTaskUpdate(Task task) {
+        if (task.getPriority() == TaskPriority.URGENT) {
+            return assignTaskToMaster(prepareForUnassignment(task));
+        }
+        return taskPersistencePort.save(task);
+    }
 
-        return technician.toBuilder()
-                .currentPoints(newPoints)
-                .taskCount(newTaskCount)
-                .status(calculateTechnicianStatus(technician, newPoints))
+    private void releaseAndSaveTechnician(Technician technician, int points) {
+        Technician released = assignmentStrategy.releaseTechnicianLoad(technician, points);
+        technicianPersistencePort.save(released);
+    }
+
+    private Task mapBasicInfo(Task existing, Task updated) {
+        return existing.toBuilder()
+                .name(updated.getName())
+                .description(updated.getDescription())
+                .priority(updated.getPriority())
                 .build();
     }
 
-    private TechnicianStatus calculateTechnicianStatus(Technician technician, int points) {
-        if (points == 0) {
-            return TechnicianStatus.AVAILABLE;
-        }
-
-        if (points >= technician.getCategory().getMaxPoints()) {
-            return TechnicianStatus.NOT_AVAILABLE;
-        }
-
-        return TechnicianStatus.BUSY;
+    private Task prepareForUnassignment(Task task) {
+        return task.toBuilder()
+                .technicianId(null)
+                .status(TaskStatus.PENDING)
+                .build();
     }
 
+    private Task saveAsUnassigned(Task task) {
+        return taskPersistencePort.save(prepareForUnassignment(task));
+    }
 }
