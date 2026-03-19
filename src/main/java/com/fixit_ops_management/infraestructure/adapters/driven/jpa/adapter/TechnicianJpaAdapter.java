@@ -65,4 +65,9 @@ public class TechnicianJpaAdapter implements ITechnicianPersistencePort {
                 .map(technicianEntityMapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public void deleteById(Long id) {
+        technicianRepository.deleteById(id);
+    }
 }

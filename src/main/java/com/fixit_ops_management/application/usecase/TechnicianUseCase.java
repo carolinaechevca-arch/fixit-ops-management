@@ -71,4 +71,11 @@ public class TechnicianUseCase implements ITechnicianServicePort {
 
         return technicianPersistencePort.save(updatedTechnicianCategory);
     }
+
+    @Override
+    public void deleteTechnician(Long id) {
+        Technician technician = getTechnicianById(id);
+        technicianDomainService.validateTechnicianCanBeDeleted(technician);
+        technicianPersistencePort.deleteById(id);
+    }
 }
