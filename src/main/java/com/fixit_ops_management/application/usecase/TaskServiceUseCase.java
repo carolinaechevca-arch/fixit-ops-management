@@ -137,6 +137,7 @@ public class TaskServiceUseCase implements ITaskServicePort {
 
     @Override
     public void processWaitingTasks() {
+
         List<Task> waitingTasks = taskPersistencePort.findByStatus(TaskStatus.PENDING);
 
         if (waitingTasks == null || waitingTasks.isEmpty()) {
@@ -153,6 +154,7 @@ public class TaskServiceUseCase implements ITaskServicePort {
 
     @Override
     public void startTask(Long taskId) {
+
         Task task = getById(taskId);
         taskDomainService.validateStatusAssigned(task);
 
@@ -162,6 +164,7 @@ public class TaskServiceUseCase implements ITaskServicePort {
 
     @Override
     public void completeTask(Long taskId) {
+
         Task task = getById(taskId);
         taskDomainService.validateStatusProgress(task);
 
